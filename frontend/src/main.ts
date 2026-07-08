@@ -1,0 +1,97 @@
+import { bootstrapApplication } from '@angular/platform-browser';
+import { importProvidersFrom } from '@angular/core';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { provideRouter } from '@angular/router';
+import { provideAnimations } from '@angular/platform-browser/animations';
+import {
+  Activity,
+  BadgeCheck,
+  Bell,
+  Building2,
+  CalendarDays,
+  Clock,
+  CircleAlert,
+  Check,
+  ChevronDown,
+  FileText,
+  Folder,
+  Info,
+  KeyRound,
+  LayoutDashboard,
+  ListChecks,
+  LogIn,
+  LogOut,
+  Mail,
+  Menu,
+  Moon,
+  Pencil,
+  Plus,
+  Search,
+  Save,
+  Send,
+  Settings,
+  ShieldCheck,
+  SlidersHorizontal,
+  Sparkles,
+  Sun,
+  Trash2,
+  UserCog,
+  UserPlus,
+  Users,
+  X,
+  LucideAngularModule
+} from 'lucide-angular';
+import { AppComponent } from './app/app.component';
+import { routes } from './app/app.routes';
+import { authInterceptor } from './app/core/interceptors/auth.interceptor';
+
+bootstrapApplication(AppComponent, {
+  providers: [
+    provideRouter(routes),
+    provideHttpClient(withInterceptors([authInterceptor])),
+    provideAnimations(),
+    importProvidersFrom(LucideAngularModule.pick({
+      Activity,
+      BadgeCheck,
+      Bell,
+      Building2,
+      CalendarDays,
+      Clock,
+      CircleAlert,
+      Check,
+      ChevronDown,
+      FileText,
+      Folder,
+      Info,
+      KeyRound,
+      LayoutDashboard,
+      ListChecks,
+      LogIn,
+      LogOut,
+      Mail,
+      Menu,
+      Moon,
+      Pencil,
+      Plus,
+      Search,
+      Save,
+      Send,
+      Settings,
+      ShieldCheck,
+      SlidersHorizontal,
+      Sparkles,
+      Sun,
+      Trash2,
+      UserCog,
+      UserPlus,
+      Users,
+      X,
+      'building-2': Building2,
+      'calendar-days': CalendarDays,
+      'file-text': FileText,
+      'list-checks': ListChecks,
+      folder: Folder,
+      users: Users
+    }))
+  ]
+}).catch((err) => console.error(err));

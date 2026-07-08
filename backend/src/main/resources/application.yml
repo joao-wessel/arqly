@@ -1,0 +1,37 @@
+spring:
+  application:
+    name: arqly-backend
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/arqly}
+    username: ${SPRING_DATASOURCE_USERNAME:arqly}
+    password: ${SPRING_DATASOURCE_PASSWORD:arqly}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+        jdbc.time_zone: UTC
+  flyway:
+    enabled: true
+  mail:
+    host: localhost
+    port: 1025
+
+server:
+  port: ${SERVER_PORT:8080}
+
+arqly:
+  security:
+    platform-secret: ${ARQLY_PLATFORM_JWT_SECRET:change-me-platform-secret-change-me-platform-secret}
+    tenant-secret: ${ARQLY_TENANT_JWT_SECRET:change-me-tenant-secret-change-me-tenant-secret}
+    issuer: arqly
+    access-token-minutes: 120
+  bootstrap:
+    platform-email: ${ARQLY_PLATFORM_EMAIL:admin@arqly.local}
+    platform-password: ${ARQLY_PLATFORM_PASSWORD:Admin@12345}
+
+logging:
+  level:
+    com.arqly: INFO

@@ -1,0 +1,47 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: arqly-postgres
+    environment:
+      POSTGRES_DB: arqly
+      POSTGRES_USER: arqly
+      POSTGRES_PASSWORD: arqly
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U arqly -d arqly"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+    container_name: arqly-backend
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/arqly
+      SPRING_DATASOURCE_USERNAME: arqly
+      SPRING_DATASOURCE_PASSWORD: arqly
+      ARQLY_PLATFORM_EMAIL: admin@arqly.local
+      ARQLY_PLATFORM_PASSWORD: Admin@12345
+      ARQLY_PLATFORM_JWT_SECRET: change-me-platform-secret-change-me-platform-secret
+      ARQLY_TENANT_JWT_SECRET: change-me-tenant-secret-change-me-tenant-secret
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: arqly-frontend
+    ports:
+      - "4200:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:

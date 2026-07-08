@@ -1,0 +1,7 @@
+package com.arqly.backend.exception;
+
+public class BusinessException extends RuntimeException {
+    public BusinessException(String message) {
+        super(message);
+    }
+}

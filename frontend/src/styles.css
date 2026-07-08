@@ -1,0 +1,217 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --arqly-50: 238 249 247;
+  --arqly-100: 215 240 236;
+  --arqly-200: 184 227 220;
+  --arqly-500: 13 123 115;
+  --arqly-600: 6 107 100;
+  --arqly-700: 5 83 79;
+  --arqly-900: 8 52 50;
+  --color-primary: #066b64;
+  --color-primary-dark: #05534f;
+  --color-primary-soft: #dff3ef;
+  --color-surface: #ffffff;
+  --color-bg: #f7faf9;
+  --color-border: #e5eceb;
+  --color-muted: #667085;
+  --color-heading: #0f172a;
+  --shadow-soft-color: rgba(15, 23, 42, 0.08);
+}
+
+:root[data-palette="terracotta"] {
+  --arqly-50: 255 247 242;
+  --arqly-100: 252 232 218;
+  --arqly-200: 247 198 168;
+  --arqly-500: 197 101 62;
+  --arqly-600: 176 82 47;
+  --arqly-700: 135 60 39;
+  --arqly-900: 81 40 31;
+  --color-primary: #b0522f;
+  --color-primary-dark: #873c27;
+  --color-primary-soft: #fce8da;
+}
+
+:root[data-palette="indigo"] {
+  --arqly-50: 246 247 255;
+  --arqly-100: 229 232 255;
+  --arqly-200: 199 206 255;
+  --arqly-500: 101 91 197;
+  --arqly-600: 82 74 174;
+  --arqly-700: 64 57 135;
+  --arqly-900: 41 37 82;
+  --color-primary: #524aae;
+  --color-primary-dark: #403987;
+  --color-primary-soft: #e5e8ff;
+}
+
+:root.dark {
+  color-scheme: dark;
+  --color-surface: #151515;
+  --color-bg: #0b0b0c;
+  --color-border: #2a2a2d;
+  --color-muted: #aaaab2;
+  --color-heading: #f8fafc;
+  --shadow-soft-color: rgba(0, 0, 0, 0.34);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: var(--color-heading);
+  background: radial-gradient(circle at top right, rgb(var(--arqly-500) / 0.08), transparent 32rem), var(--color-bg);
+}
+
+.card {
+  @apply rounded-2xl border border-slate-200/80 bg-white;
+  box-shadow: 0 18px 60px var(--shadow-soft-color);
+}
+
+.field {
+  @apply w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-arqly-500 focus:ring-4 focus:ring-arqly-100;
+  min-height: 3rem;
+}
+
+.btn-primary {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl bg-arqly-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-arqly-700;
+  min-height: 2.75rem;
+}
+
+.btn-secondary {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-arqly-200 hover:text-arqly-700;
+  min-height: 2.75rem;
+}
+
+.modal-overlay {
+  background: rgba(0, 0, 0, 0.48);
+}
+
+.modal-panel {
+  background: var(--color-surface) !important;
+}
+
+@media (max-width: 767px) {
+  .modal-overlay {
+    align-items: end;
+    padding: 0.75rem;
+  }
+
+  .modal-panel {
+    width: 100%;
+    max-width: none;
+    max-height: min(86vh, 42rem);
+    overflow-y: auto;
+    border-radius: 1.5rem 1.5rem 1rem 1rem !important;
+  }
+
+  .modal-panel .btn-primary,
+  .modal-panel .btn-secondary {
+    flex: 1 1 0;
+  }
+}
+
+.checkbox {
+  appearance: none;
+  width: 1.2rem;
+  height: 1.2rem;
+  border: 1.5px solid rgb(var(--arqly-200));
+  border-radius: 0.4rem;
+  background-color: rgb(var(--arqly-50));
+  display: inline-grid;
+  place-content: center;
+  box-shadow: none;
+  transition: border-color 150ms ease, background-color 150ms ease, box-shadow 150ms ease;
+}
+
+.checkbox:checked {
+  border-color: var(--color-primary);
+  background-color: var(--color-primary);
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 16 16' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M3.5 8.3 6.6 11.2 12.7 4.8' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 0.85rem 0.85rem;
+}
+
+.checkbox:focus {
+  outline: none;
+  box-shadow: 0 0 0 0.45rem rgb(var(--arqly-100) / 0.82);
+}
+
+.checkbox:hover {
+  border-color: rgb(var(--arqly-500));
+  box-shadow: 0 0 0 0.45rem rgb(var(--arqly-100) / 0.78);
+}
+
+:root.dark body {
+  background:
+    radial-gradient(circle at top right, rgb(var(--arqly-500) / 0.16), transparent 30rem),
+    linear-gradient(180deg, #101010 0%, var(--color-bg) 34rem);
+}
+
+:root.dark .bg-white,
+:root.dark .bg-white\/75,
+:root.dark .bg-white\/90 {
+  background-color: rgba(21, 21, 21, 0.9) !important;
+}
+
+:root.dark .bg-slate-50,
+:root.dark .bg-slate-100,
+:root.dark .hover\:bg-slate-50:hover {
+  background-color: #202020 !important;
+}
+
+:root.dark .border-slate-100,
+:root.dark .border-slate-200,
+:root.dark .border-slate-200\/70,
+:root.dark .border-slate-200\/80 {
+  border-color: var(--color-border) !important;
+}
+
+:root.dark .text-slate-400,
+:root.dark .text-slate-500,
+:root.dark .text-slate-600,
+:root.dark .text-slate-700 {
+  color: var(--color-muted) !important;
+}
+
+:root.dark .text-slate-900,
+:root.dark .text-slate-950,
+:root.dark h1,
+:root.dark h2,
+:root.dark h3,
+:root.dark strong {
+  color: var(--color-heading) !important;
+}
+
+:root.dark .arqly-logo-text {
+  color: #ffffff !important;
+}
+
+:root.dark .field {
+  background-color: #151515;
+  border-color: var(--color-border);
+  color: var(--color-heading);
+}
+
+:root.dark .field::placeholder {
+  color: #748481;
+}
+
+:root.dark .checkbox {
+  background-color: rgb(var(--arqly-900) / 0.34);
+  border-color: rgb(var(--arqly-500) / 0.72);
+  box-shadow: none;
+}
+
+:root.dark .shadow-sm,
+:root.dark .shadow-lg,
+:root.dark .shadow-soft {
+  box-shadow: 0 18px 60px var(--shadow-soft-color) !important;
+}
