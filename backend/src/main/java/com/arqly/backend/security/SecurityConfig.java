@@ -36,7 +36,7 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .sessionManagement(session -> session.sessionCreationPolicy(STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/platform/login").permitAll()
+                        .requestMatchers("/api/auth/platform/login", "/api/auth/platform/forgot-password", "/api/auth/platform/reset-password").permitAll()
                         .anyRequest().hasRole("PLATFORM_ADMIN"))
                 .addFilterBefore(new JwtAuthenticationFilter(jwtService::parsePlatform), UsernamePasswordAuthenticationFilter.class)
                 .build();
@@ -51,6 +51,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/tenant/login", "/api/auth/tenant/forgot-password", "/api/auth/tenant/reset-password", "/api/auth/tenant/first-access").permitAll()
+                        .requestMatchers("/api/tenant/users/**").hasRole("TENANT_ADMIN")
                         .anyRequest().hasAnyRole("TENANT_ADMIN", "USER"))
                 .addFilterBefore(new JwtAuthenticationFilter(jwtService::parseTenant), UsernamePasswordAuthenticationFilter.class)
                 .build();

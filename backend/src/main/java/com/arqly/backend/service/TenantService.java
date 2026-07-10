@@ -12,7 +12,6 @@ import com.arqly.backend.exception.NotFoundException;
 import com.arqly.backend.mapper.TenantMapper;
 import com.arqly.backend.repository.TenantRepository;
 import com.arqly.backend.repository.TenantUserRepository;
-import java.util.Set;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -45,7 +44,7 @@ public class TenantService {
     @Transactional
     public TenantResponse create(TenantRequest request) {
         if (tenantRepository.existsByCnpj(request.cnpj())) {
-            throw new BusinessException("CNPJ já cadastrado.");
+            throw new BusinessException("CPF/CNPJ já cadastrado.");
         }
         var tenant = mapper.toEntity(request);
         if (tenant.getStatus() == null) {
@@ -83,18 +82,21 @@ public class TenantService {
     @Transactional
     public TenantAdminResponse createAdmin(UUID tenantId, CreateTenantAdminRequest request) {
         var tenant = tenantRepository.findById(tenantId).orElseThrow(() -> new NotFoundException("Tenant não encontrado."));
-        if (userRepository.existsByEmailIgnoreCaseAndTenantId(request.email(), tenantId)) {
-            throw new BusinessException("E-mail já cadastrado neste tenant.");
-        }
-        var user = new TenantUser();
-        user.setTenant(tenant);
-        user.setName(request.name());
-        user.setEmail(request.email());
-        user.setPasswordHash(passwordEncoder.encode(UUID.randomUUID().toString()));
-        user.setRoles(Set.of(Role.ROLE_TENANT_ADMIN));
-        userRepository.save(user);
+        var user = userRepository.findByEmailIgnoreCaseAndTenantId(request.email(), tenantId)
+                .orElseGet(() -> {
+                    var newUser = new TenantUser();
+                    newUser.setTenant(tenant);
+                    newUser.setEmail(request.email());
+                    newUser.setPasswordHash(passwordEncoder.encode(UUID.randomUUID().toString()));
+                    return newUser;
+                });
 
-        String token = tokenService.create(user, AccessTokenType.FIRST_ACCESS, 72);
+        user.setName(request.name());
+        user.setActive(true);
+        user.getRoles().add(Role.ROLE_TENANT_ADMIN);
+        user = userRepository.save(user);
+
+        String token = tokenService.replace(user, AccessTokenType.FIRST_ACCESS, 1);
         String link = settingsService.getGeneral().frontendUrl() + "/first-access?token=" + token;
         emailService.sendFirstAccess(user.getEmail(), link);
         return new TenantAdminResponse(user.getId(), tenant.getId(), user.getName(), user.getEmail(), link);

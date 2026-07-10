@@ -13,4 +13,6 @@ public final class AuthDtos {
                                Set<String> roles, String themeMode, String colorPalette) {}
     public record ForgotPasswordRequest(@Email @NotBlank String email) {}
     public record ResetPasswordRequest(@NotBlank String token, @NotBlank String password) {}
+    public record FirstAccessRequest(@NotBlank String token, @NotBlank String password, @NotBlank String name) {}
+    public record ChangePasswordRequest(@NotBlank String currentPassword, @NotBlank String newPassword) {}
 }

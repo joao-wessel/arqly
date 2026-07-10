@@ -124,18 +124,40 @@ interface Page<T> {
 
     @if (userModalOpen()) {
       <div class="modal-overlay fixed inset-0 z-50 grid place-items-center p-4">
-        <form class="modal-panel card w-full max-w-xl space-y-5 p-6" [formGroup]="userForm" (ngSubmit)="saveUser()">
+        <form class="modal-panel card w-full max-w-xl space-y-6 p-6" [formGroup]="userForm" (ngSubmit)="saveUser()">
           <div class="flex items-center justify-between">
             <h3 class="text-xl font-extrabold">{{ editingUser() ? 'Editar administrador' : 'Novo administrador' }}</h3>
-            <button class="btn-secondary px-3 py-2" type="button" (click)="closeUserModal()"><lucide-icon name="X" size="18"></lucide-icon></button>
+            <button class="btn-secondary px-3 py-2" type="button" (click)="closeUserModal()">
+              <lucide-icon name="X" size="18"></lucide-icon>
+            </button>
           </div>
-          <input class="field" placeholder="Nome" formControlName="name">
-          <input class="field" type="email" placeholder="E-mail" formControlName="email">
-          <input class="field" type="password" [placeholder]="editingUser() ? 'Nova senha (opcional)' : 'Senha inicial'" formControlName="password">
-          <label class="flex items-center gap-2 text-sm font-semibold text-slate-600">
-            <input class="checkbox" type="checkbox" formControlName="active">
-            Usuário ativo
-          </label>
+
+          <section class="space-y-3">
+            <div>
+              <p class="text-sm font-extrabold text-slate-900">Dados do usuário</p>
+              <p class="mt-1 text-xs text-slate-500">Identificação e credenciais de acesso à área administrativa.</p>
+            </div>
+            <div class="grid gap-4 md:grid-cols-2">
+              <input class="field" placeholder="Nome" formControlName="name">
+              <input class="field" type="email" placeholder="E-mail" formControlName="email">
+              <input class="field md:col-span-2" type="password" [placeholder]="editingUser() ? 'Nova senha (opcional)' : 'Senha inicial'" formControlName="password">
+            </div>
+          </section>
+
+          <section class="space-y-3 border-t border-slate-200 pt-5">
+            <div>
+              <p class="text-sm font-extrabold text-slate-900">Acesso</p>
+              <p class="mt-1 text-xs text-slate-500">Controle se o administrador pode entrar na plataforma.</p>
+            </div>
+            <label class="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3">
+              <span>
+                <span class="block text-sm font-bold text-slate-800">Usuário ativo</span>
+                <span class="mt-1 block text-xs text-slate-500">Usuários inativos não conseguem autenticar.</span>
+              </span>
+              <input class="checkbox" type="checkbox" formControlName="active">
+            </label>
+          </section>
+
           <div class="flex justify-end gap-3">
             <button class="btn-secondary" type="button" (click)="closeUserModal()">Cancelar</button>
             <button class="btn-primary" type="submit">

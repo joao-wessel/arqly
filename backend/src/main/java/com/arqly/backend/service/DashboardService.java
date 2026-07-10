@@ -40,7 +40,9 @@ public class DashboardService {
                 .sorted(Comparator.comparing(AccessItem::lastAccessAt).reversed())
                 .limit(5)
                 .toList();
-        return new AdminDashboard(tenants.count(), tenantUsers.count() + platformUsers.count(),
+        long platformUserCount = platformUsers.count();
+        long tenantUserCount = tenantUsers.count();
+        return new AdminDashboard(tenants.count(), platformUserCount, platformUserCount, tenantUserCount,
                 tenants.countByStatus(TenantStatus.ACTIVE), latestAccesses, latestTenants);
     }
 

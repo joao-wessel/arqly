@@ -8,8 +8,9 @@ import com.arqly.backend.repository.PlatformSettingRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Properties;
-import org.springframework.mail.SimpleMailMessage;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -58,11 +59,31 @@ public class SettingsService {
         props.put("mail.smtp.ssl.enable", String.valueOf(settings.ssl()));
         props.put("mail.smtp.starttls.enable", String.valueOf(settings.tls()));
 
-        var message = new SimpleMailMessage();
-        message.setFrom(settings.senderEmail());
-        message.setTo(to);
-        message.setSubject("Teste de envio - Arqly");
-        message.setText("Servidor SMTP configurado com sucesso.");
+        var message = sender.createMimeMessage();
+        try {
+            var helper = new MimeMessageHelper(message, true, "UTF-8");
+            helper.setFrom(settings.senderEmail(), settings.senderName());
+            helper.setTo(to);
+            helper.setSubject("Teste de envio - Arqly");
+            helper.setText("Servidor SMTP configurado com sucesso.", """
+                    <!doctype html>
+                    <html lang="pt-BR">
+                    <body style="margin:0;background:#f3f7f6;padding:32px;font-family:Inter,Segoe UI,Arial,sans-serif;color:#0f172a;">
+                      <div style="max-width:600px;margin:0 auto;background:#ffffff;border:1px solid #dbe7e4;border-radius:26px;overflow:hidden;box-shadow:0 24px 70px rgba(15,23,42,.10);">
+                        <div style="height:8px;background:#00796b;"></div>
+                        <div style="padding:34px;">
+                          <img src="cid:arqlyLogo" width="174" height="48" alt="Arqly" style="display:block;border:0;outline:none;text-decoration:none;width:174px;height:auto;margin:0 0 18px;">
+                          <h1 style="margin:0;font-size:28px;line-height:1.2;">Servidor SMTP configurado</h1>
+                          <p style="margin:16px 0 0;color:#526174;font-size:16px;line-height:1.65;">Este e-mail confirma que o Arqly conseguiu enviar mensagens usando as configurações atuais.</p>
+                        </div>
+                      </div>
+                    </body>
+                    </html>
+                    """);
+            helper.addInline("arqlyLogo", new ClassPathResource("email/arqly-logo.png"), "image/png");
+        } catch (Exception ex) {
+            throw new BusinessException("Não foi possível montar o e-mail de teste.");
+        }
         sender.send(message);
     }
 

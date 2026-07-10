@@ -2,6 +2,7 @@ package com.arqly.backend.controller;
 
 import com.arqly.backend.dto.ApiResponse;
 import com.arqly.backend.dto.AuthDtos.AuthResponse;
+import com.arqly.backend.dto.AuthDtos.FirstAccessRequest;
 import com.arqly.backend.dto.AuthDtos.ForgotPasswordRequest;
 import com.arqly.backend.dto.AuthDtos.LoginRequest;
 import com.arqly.backend.dto.AuthDtos.ResetPasswordRequest;
@@ -39,8 +40,8 @@ public class TenantAuthController {
     }
 
     @PostMapping("/first-access")
-    public ApiResponse<Void> firstAccess(@Valid @RequestBody ResetPasswordRequest request) {
-        authService.firstAccess(request.token(), request.password());
+    public ApiResponse<Void> firstAccess(@Valid @RequestBody FirstAccessRequest request) {
+        authService.firstAccess(request.token(), request.password(), request.name());
         return ApiResponse.message("Senha definida com sucesso.");
     }
 }

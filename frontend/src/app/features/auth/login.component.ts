@@ -34,9 +34,7 @@ import { ToastService } from '../../shared/components/toast/toast.service';
             </button>
           </form>
 
-          @if (scope === 'tenant') {
-            <a routerLink="/forgot-password" class="mt-5 inline-block text-sm font-semibold text-arqly-700">Esqueci minha senha</a>
-          }
+          <a [routerLink]="scope === 'platform' ? '/forgot-password/admin' : '/forgot-password'" class="mt-5 inline-block text-sm font-semibold text-arqly-700">Esqueci minha senha</a>
         </div>
       </section>
 

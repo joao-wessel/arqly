@@ -67,8 +67,17 @@ public class AuthService {
     @Transactional
     public void forgotPassword(String email) {
         tenantUsers.findByEmailIgnoreCase(email).ifPresent(user -> {
-            String token = tokenService.create(user, AccessTokenType.PASSWORD_RESET, 2);
+            String token = tokenService.replace(user, AccessTokenType.PASSWORD_RESET, 2);
             String link = settingsService.getGeneral().frontendUrl() + "/reset-password?token=" + token;
+            emailService.sendPasswordReset(user.getEmail(), link);
+        });
+    }
+
+    @Transactional
+    public void forgotPlatformPassword(String email) {
+        platformUsers.findByEmailIgnoreCase(email).ifPresent(user -> {
+            String token = tokenService.replace(user, AccessTokenType.PASSWORD_RESET, 2);
+            String link = settingsService.getGeneral().frontendUrl() + "/reset-password/admin?token=" + token;
             emailService.sendPasswordReset(user.getEmail(), link);
         });
     }
@@ -80,11 +89,36 @@ public class AuthService {
     }
 
     @Transactional
-    public void firstAccess(String token, String password) {
+    public void resetPlatformPassword(String token, String password) {
+        var user = tokenService.consumePlatform(token, AccessTokenType.PASSWORD_RESET);
+        user.setPasswordHash(passwordEncoder.encode(password));
+    }
+
+    @Transactional
+    public void firstAccess(String token, String password, String name) {
         var user = tokenService.consume(token, AccessTokenType.FIRST_ACCESS);
         if (!user.getRoles().stream().anyMatch(role -> role.name().equals("ROLE_TENANT_ADMIN"))) {
             throw new BusinessException("Token inválido para primeiro acesso.");
         }
+        user.setName(name);
         user.setPasswordHash(passwordEncoder.encode(password));
+    }
+
+    @Transactional
+    public void changePlatformPassword(java.util.UUID userId, String currentPassword, String newPassword) {
+        var user = platformUsers.findById(userId).orElseThrow(() -> new BusinessException("Usuário não encontrado."));
+        if (!passwordEncoder.matches(currentPassword, user.getPasswordHash())) {
+            throw new BusinessException("Senha atual inválida.");
+        }
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+    }
+
+    @Transactional
+    public void changeTenantPassword(java.util.UUID userId, String currentPassword, String newPassword) {
+        var user = tenantUsers.findById(userId).orElseThrow(() -> new BusinessException("Usuário não encontrado."));
+        if (!passwordEncoder.matches(currentPassword, user.getPasswordHash())) {
+            throw new BusinessException("Senha atual inválida.");
+        }
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
     }
 }

@@ -14,6 +14,9 @@ public class Tenant extends BaseEntity {
     private String tradeName;
     @Column(nullable = false)
     private String legalName;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private PersonType personType = PersonType.LEGAL_ENTITY;
     @Column(nullable = false, unique = true, length = 20)
     private String cnpj;
     @Column(nullable = false)
@@ -36,6 +39,8 @@ public class Tenant extends BaseEntity {
     public void setTradeName(String tradeName) { this.tradeName = tradeName; }
     public String getLegalName() { return legalName; }
     public void setLegalName(String legalName) { this.legalName = legalName; }
+    public PersonType getPersonType() { return personType; }
+    public void setPersonType(PersonType personType) { this.personType = personType; }
     public String getCnpj() { return cnpj; }
     public void setCnpj(String cnpj) { this.cnpj = cnpj; }
     public String getPrimaryEmail() { return primaryEmail; }

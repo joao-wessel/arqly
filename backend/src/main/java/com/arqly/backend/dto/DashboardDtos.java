@@ -7,7 +7,7 @@ import java.util.UUID;
 public final class DashboardDtos {
     private DashboardDtos() {}
 
-    public record AdminDashboard(long tenantCount, long userCount, long activeTenantCount,
+    public record AdminDashboard(long tenantCount, long userCount, long platformUserCount, long tenantUserCount, long activeTenantCount,
                                  List<AccessItem> latestAccesses, List<TenantItem> latestTenants) {}
 
     public record AccessItem(String name, String email, Instant lastAccessAt, String scope) {}

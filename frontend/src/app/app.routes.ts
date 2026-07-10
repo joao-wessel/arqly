@@ -9,13 +9,21 @@ import { TenantsComponent } from './features/admin/tenants.component';
 import { PlatformUsersComponent } from './features/admin/platform-users.component';
 import { SettingsComponent } from './features/settings/settings.component';
 import { TenantDashboardComponent } from './features/tenant/tenant-dashboard.component';
+import { TenantUsersComponent } from './features/tenant/tenant-users.component';
+import { ChangePasswordComponent } from './features/account/change-password.component';
+import { ClientsComponent } from './features/tenant/clients.component';
+import { ClientPortalComponent } from './features/portal/client-portal.component';
+import { ServiceCatalogComponent } from './features/tenant/service-catalog.component';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent, data: { scope: 'tenant' } },
   { path: 'login/admin', component: LoginComponent, data: { scope: 'platform' } },
-  { path: 'forgot-password', component: ForgotPasswordComponent },
+  { path: 'forgot-password/admin', component: ForgotPasswordComponent, data: { scope: 'platform' } },
+  { path: 'forgot-password', component: ForgotPasswordComponent, data: { scope: 'tenant' } },
   { path: 'first-access', component: PasswordFlowComponent, data: { firstAccess: true } },
-  { path: 'reset-password', component: PasswordFlowComponent },
+  { path: 'reset-password/admin', component: PasswordFlowComponent, data: { scope: 'platform' } },
+  { path: 'reset-password', component: PasswordFlowComponent, data: { scope: 'tenant' } },
+  { path: 'portal/:token', component: ClientPortalComponent },
   {
     path: 'admin',
     component: AppShellComponent,
@@ -26,6 +34,7 @@ export const routes: Routes = [
       { path: 'tenants', component: TenantsComponent },
       { path: 'users', component: PlatformUsersComponent },
       { path: 'settings', component: SettingsComponent },
+      { path: 'account/password', component: ChangePasswordComponent },
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' }
     ]
   },
@@ -36,6 +45,10 @@ export const routes: Routes = [
     data: { scope: 'tenant' },
     children: [
       { path: 'dashboard', component: TenantDashboardComponent },
+      { path: 'clients', component: ClientsComponent },
+      { path: 'services', component: ServiceCatalogComponent },
+      { path: 'users', component: TenantUsersComponent },
+      { path: 'account/password', component: ChangePasswordComponent },
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' }
     ]
   },

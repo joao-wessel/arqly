@@ -8,6 +8,8 @@ import { StatCardComponent } from '../../shared/components/stat-card.component';
 interface AdminDashboard {
   tenantCount: number;
   userCount: number;
+  platformUserCount: number;
+  tenantUserCount: number;
   activeTenantCount: number;
   latestAccesses: { name: string; email: string; lastAccessAt: string; scope: string }[];
   latestTenants: { id: string; tradeName: string; primaryEmail: string; createdAt: string }[];
@@ -26,7 +28,7 @@ interface AdminDashboard {
 
       <div class="grid gap-5 md:grid-cols-3">
         <app-stat-card label="Tenants" [value]="dashboard()?.tenantCount || 0" hint="Total cadastrado" icon="Building2" />
-        <app-stat-card label="Usuários" [value]="dashboard()?.userCount || 0" hint="Inclui plataforma e tenants" icon="Users" />
+        <app-stat-card label="Usuários" [value]="dashboard()?.userCount || 0" hint="Administradores da plataforma" icon="Users" />
         <app-stat-card label="Tenants ativos" [value]="dashboard()?.activeTenantCount || 0" hint="Operação liberada" icon="BadgeCheck" />
       </div>
 
@@ -83,4 +85,5 @@ export class AdminDashboardComponent implements OnInit {
     this.http.get<ApiResponse<AdminDashboard>>('http://localhost:8080/api/platform/dashboard')
       .subscribe((response) => this.dashboard.set(response.data));
   }
+
 }

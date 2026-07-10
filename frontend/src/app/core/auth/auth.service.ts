@@ -28,13 +28,21 @@ export class AuthService {
     );
   }
 
-  forgotPassword(email: string) {
-    return this.http.post<ApiResponse<void>>(`${API_URL}/auth/tenant/forgot-password`, { email });
+  forgotPassword(scope: AuthScope, email: string) {
+    const path = scope === 'platform' ? 'auth/platform/forgot-password' : 'auth/tenant/forgot-password';
+    return this.http.post<ApiResponse<void>>(`${API_URL}/${path}`, { email });
   }
 
-  resetPassword(token: string, password: string, firstAccess = false) {
-    const path = firstAccess ? 'first-access' : 'reset-password';
-    return this.http.post<ApiResponse<void>>(`${API_URL}/auth/tenant/${path}`, { token, password });
+  resetPassword(scope: AuthScope, token: string, password: string, firstAccess = false, name?: string) {
+    const path = firstAccess ? 'auth/tenant/first-access' : scope === 'platform' ? 'auth/platform/reset-password' : 'auth/tenant/reset-password';
+    const body = firstAccess ? { token, password, name } : { token, password };
+    return this.http.post<ApiResponse<void>>(`${API_URL}/${path}`, body);
+  }
+
+  changePassword(currentPassword: string, newPassword: string) {
+    const scope = this.scope() || 'tenant';
+    const path = scope === 'platform' ? 'platform/me/password' : 'tenant/me/password';
+    return this.http.put<ApiResponse<void>>(`${API_URL}/${path}`, { currentPassword, newPassword });
   }
 
   token(): string | null {

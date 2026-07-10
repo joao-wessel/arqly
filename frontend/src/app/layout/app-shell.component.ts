@@ -119,21 +119,22 @@ export class AppShellComponent {
         { label: 'Dashboard', path: '/admin/dashboard', icon: 'LayoutDashboard' },
         { label: 'Usuários', path: '/admin/users', icon: 'UserCog' },
         { label: 'Tenants', path: '/admin/tenants', icon: 'Building2' },
-        { label: 'Configurações', path: '/admin/settings', icon: 'Settings' }
+        { label: 'Configurações', path: '/admin/settings', icon: 'Settings' },
+        { label: 'Minha conta', path: '/admin/account/password', icon: 'ShieldCheck' }
       ]
     : [
         { label: 'Dashboard', path: '/app/dashboard', icon: 'LayoutDashboard' },
-        { label: 'Projetos', path: '/app/dashboard', icon: 'Folder' },
-        { label: 'Tarefas', path: '/app/dashboard', icon: 'ListChecks' },
-        { label: 'Documentos', path: '/app/dashboard', icon: 'FileText' },
-        { label: 'Equipe', path: '/app/dashboard', icon: 'Users' }
+        { label: 'Clientes', path: '/app/clients', icon: 'Building2' },
+        { label: 'Serviços', path: '/app/services', icon: 'ListChecks' },
+        { label: 'Usuários', path: '/app/users', icon: 'Users' },
+        { label: 'Minha conta', path: '/app/account/password', icon: 'ShieldCheck' }
       ]);
   readonly mobileNavItems = computed(() => this.navItems().slice(0, 4));
 
   constructor(readonly auth: AuthService, private readonly router: Router) {}
 
   title() {
-    return this.auth.scope() === 'platform' ? 'Administração da plataforma' : 'Bom dia, arquiteto';
+    return this.auth.scope() === 'platform' ? 'Administração da plataforma' : `Olá, ${this.auth.currentUser()?.name || 'usuário'}`;
   }
 
   initials() {
@@ -141,7 +142,10 @@ export class AppShellComponent {
   }
 
   roleLabel() {
-    return this.auth.scope() === 'platform' ? 'Administrador da plataforma' : 'Usuário do tenant';
+    if (this.auth.scope() === 'platform') {
+      return 'Administrador da plataforma';
+    }
+    return this.auth.currentUser()?.roles.includes('ROLE_TENANT_ADMIN') ? 'Administrador' : 'Usuário comum';
   }
 
   isActive(item: { label: string; path: string }) {
