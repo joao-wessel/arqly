@@ -8,6 +8,7 @@ import { ArqlySelectComponent } from '../../shared/components/arqly-select.compo
 import { ToastService } from '../../shared/components/toast/toast.service';
 
 type PersonType = 'NATURAL_PERSON' | 'LEGAL_ENTITY';
+type TenantTab = 'primary' | 'address';
 
 interface Tenant {
   id: string;
@@ -149,49 +150,86 @@ interface ViaCepResponse {
             <button class="btn-secondary px-3 py-2" type="button" (click)="closeTenantModal()"><lucide-icon name="X" size="18"></lucide-icon></button>
           </div>
 
-          <section class="space-y-3">
-            <div>
-              <p class="text-sm font-extrabold text-slate-900">Dados primários</p>
-              <p class="mt-1 text-xs text-slate-500">Identificação principal do tenant e contatos.</p>
-            </div>
-            <div class="grid gap-4 md:grid-cols-2">
-              <app-arqly-select
-                formControlName="personType"
-                placeholder="Tipo de pessoa"
-                [options]="personTypeOptions"
-              />
-              <input class="field" placeholder="Nome fantasia" formControlName="tradeName">
-              <input class="field" placeholder="Razão social" formControlName="legalName">
-              <input
-                class="field"
-                [placeholder]="documentPlaceholder()"
-                [attr.maxlength]="tenantForm.controls.personType.value === 'NATURAL_PERSON' ? 14 : 18"
-                inputmode="numeric"
-                formControlName="cnpj"
-                (input)="onDocumentInput($event)"
-              >
-              <input class="field" placeholder="E-mail principal" formControlName="primaryEmail">
-              <input class="field" placeholder="Telefone" inputmode="tel" maxlength="15" formControlName="phone" (input)="onPhoneInput($event)">
-              <app-arqly-select
-                formControlName="status"
-                placeholder="Status"
-                [options]="tenantStatusOptions"
-              />
-            </div>
-          </section>
+          <div class="grid gap-2 rounded-2xl bg-slate-50/70 p-2 md:grid-cols-2">
+            <button class="rounded-xl px-4 py-3 text-sm font-bold transition" type="button"
+                    [class.bg-white]="activeTenantTab() === 'primary'"
+                    [class.text-arqly-700]="activeTenantTab() === 'primary'"
+                    [class.shadow-sm]="activeTenantTab() === 'primary'"
+                    [class.text-slate-500]="activeTenantTab() !== 'primary'"
+                    (click)="activeTenantTab.set('primary')">Dados primários</button>
+            <button class="rounded-xl px-4 py-3 text-sm font-bold transition" type="button"
+                    [class.bg-white]="activeTenantTab() === 'address'"
+                    [class.text-arqly-700]="activeTenantTab() === 'address'"
+                    [class.shadow-sm]="activeTenantTab() === 'address'"
+                    [class.text-slate-500]="activeTenantTab() !== 'address'"
+                    (click)="activeTenantTab.set('address')">Endereço</button>
+          </div>
 
-          <section class="space-y-3 border-t border-slate-200 pt-5">
-            <div>
-              <p class="text-sm font-extrabold text-slate-900">Endereço</p>
-              <p class="mt-1 text-xs text-slate-500">Informe o CEP para preencher endereço, cidade e estado automaticamente.</p>
-            </div>
-            <div class="grid gap-4 md:grid-cols-2">
-              <input class="field" placeholder="CEP" inputmode="numeric" maxlength="9" formControlName="zipCode" (input)="onZipCodeInput($event)">
-              <input class="field md:col-span-2" placeholder="Endereço" formControlName="address">
-              <input class="field" placeholder="Cidade" formControlName="city">
-              <input class="field" placeholder="Estado" formControlName="state">
-            </div>
-          </section>
+          @if (activeTenantTab() === 'primary') {
+            <section class="space-y-3">
+              <div>
+                <p class="text-sm font-extrabold text-slate-900">Dados primários</p>
+                <p class="mt-1 text-xs text-slate-500">Identificação principal do tenant e contatos.</p>
+              </div>
+              <div class="grid gap-4 md:grid-cols-2">
+                <label class="space-y-1">
+                  <span class="text-xs font-bold text-slate-500">Tipo de pessoa <span class="text-red-500">*</span></span>
+                  <app-arqly-select formControlName="personType" placeholder="Tipo de pessoa" [options]="personTypeOptions" panelMode="fixed" />
+                </label>
+                <label class="space-y-1">
+                  <span class="text-xs font-bold text-slate-500">Nome fantasia <span class="text-red-500">*</span></span>
+                  <input class="field" placeholder="Nome fantasia" formControlName="tradeName">
+                </label>
+                <label class="space-y-1">
+                  <span class="text-xs font-bold text-slate-500">Razão social <span class="text-red-500">*</span></span>
+                  <input class="field" placeholder="Razão social" formControlName="legalName">
+                </label>
+                <label class="space-y-1">
+                  <span class="text-xs font-bold text-slate-500">{{ tenantForm.controls.personType.value === 'NATURAL_PERSON' ? 'CPF' : 'CNPJ' }} <span class="text-red-500">*</span></span>
+                  <input class="field" [placeholder]="documentPlaceholder()" [attr.maxlength]="tenantForm.controls.personType.value === 'NATURAL_PERSON' ? 14 : 18" inputmode="numeric" formControlName="cnpj" (input)="onDocumentInput($event)">
+                </label>
+                <label class="space-y-1">
+                  <span class="text-xs font-bold text-slate-500">E-mail principal <span class="text-red-500">*</span></span>
+                  <input class="field" placeholder="E-mail principal" formControlName="primaryEmail">
+                </label>
+                <label class="space-y-1">
+                  <span class="text-xs font-bold text-slate-500">Telefone</span>
+                  <input class="field" placeholder="Telefone" inputmode="tel" maxlength="15" formControlName="phone" (input)="onPhoneInput($event)">
+                </label>
+                <label class="space-y-1">
+                  <span class="text-xs font-bold text-slate-500">Status <span class="text-red-500">*</span></span>
+                  <app-arqly-select formControlName="status" placeholder="Status" [options]="tenantStatusOptions" panelMode="fixed" />
+                </label>
+              </div>
+            </section>
+          }
+
+          @if (activeTenantTab() === 'address') {
+            <section class="space-y-3">
+              <div>
+                <p class="text-sm font-extrabold text-slate-900">Endereço</p>
+                <p class="mt-1 text-xs text-slate-500">Informe o CEP para preencher endereço, cidade e estado automaticamente.</p>
+              </div>
+              <div class="grid gap-4 md:grid-cols-2">
+                <label class="space-y-1">
+                  <span class="text-xs font-bold text-slate-500">CEP</span>
+                  <input class="field" placeholder="00000-000" inputmode="numeric" maxlength="9" formControlName="zipCode" (input)="onZipCodeInput($event)">
+                </label>
+                <label class="space-y-1 md:col-span-2">
+                  <span class="text-xs font-bold text-slate-500">Endereço</span>
+                  <input class="field" placeholder="Rua, avenida, número..." formControlName="address">
+                </label>
+                <label class="space-y-1">
+                  <span class="text-xs font-bold text-slate-500">Cidade</span>
+                  <input class="field" placeholder="Cidade" formControlName="city">
+                </label>
+                <label class="space-y-1">
+                  <span class="text-xs font-bold text-slate-500">Estado</span>
+                  <input class="field" placeholder="UF" formControlName="state">
+                </label>
+              </div>
+            </section>
+          }
 
           <div class="flex justify-end gap-3">
             <button class="btn-secondary" type="button" (click)="closeTenantModal()">Cancelar</button>
@@ -212,7 +250,10 @@ interface ViaCepResponse {
             <button class="btn-secondary px-3 py-2" type="button" (click)="closeFirstAccessModal()"><lucide-icon name="X" size="18"></lucide-icon></button>
           </div>
           <p class="text-sm text-slate-500">Informe o e-mail do administrador do tenant {{ selectedTenant()?.tradeName }}. Um novo link invalida o anterior e expira em 1 hora.</p>
-          <input class="field" type="email" placeholder="E-mail" formControlName="email">
+          <label class="space-y-1">
+            <span class="text-xs font-bold text-slate-500">E-mail do administrador <span class="text-red-500">*</span></span>
+            <input class="field" type="email" placeholder="admin@escritorio.com" formControlName="email">
+          </label>
           @if (firstAccessUrl()) {
             <p class="rounded-xl bg-arqly-50 p-3 text-sm font-semibold text-arqly-800">Link enviado por e-mail com validade de 1 hora.</p>
           }
@@ -262,6 +303,7 @@ export class TenantsComponent implements OnInit {
   readonly editingTenant = signal<Tenant | null>(null);
   readonly selectedTenant = signal<Tenant | null>(null);
   readonly firstAccessUrl = signal('');
+  readonly activeTenantTab = signal<TenantTab>('primary');
 
   readonly tenantForm = this.fb.nonNullable.group({
     personType: ['LEGAL_ENTITY' as PersonType, Validators.required],
@@ -303,6 +345,7 @@ export class TenantsComponent implements OnInit {
 
   openTenantModal(tenant?: Tenant) {
     this.editingTenant.set(tenant || null);
+    this.activeTenantTab.set('primary');
     this.lastZipCodeLookup = this.onlyDigits(tenant?.zipCode || '');
     this.tenantForm.reset({
       personType: tenant?.personType || 'LEGAL_ENTITY',

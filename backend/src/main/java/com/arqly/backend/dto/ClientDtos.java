@@ -2,6 +2,7 @@ package com.arqly.backend.dto;
 
 import com.arqly.backend.entity.ClientPersonType;
 import com.arqly.backend.entity.ClientStatus;
+import com.arqly.backend.entity.ProposalStatus;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -9,6 +10,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
@@ -109,7 +111,12 @@ public final class ClientDtos {
 
     public record PortalValidityRequest(@NotNull Instant expiresAt) {}
 
-    public record PortalPublicResponse(ClientPublicResponse client, List<Object> projects, String message) {}
+    public record PortalPublicResponse(ClientPublicResponse client, List<Object> projects,
+                                       List<ClientPortalProposalResponse> proposals, String message) {}
 
     public record ClientPublicResponse(UUID id, String displayName, String email, String phone, String city, String state) {}
+
+    public record ClientPortalProposalResponse(UUID id, String number, String title, ProposalStatus status,
+                                               BigDecimal total, LocalDate validUntil, String portalUrl,
+                                               Instant createdAt) {}
 }

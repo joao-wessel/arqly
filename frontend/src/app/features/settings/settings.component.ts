@@ -73,16 +73,34 @@ type SettingsTab = 'general' | 'smtp';
           </div>
           <div class="space-y-6 p-6">
             <div class="grid gap-4 md:grid-cols-2">
-              <input class="field" placeholder="Nome da plataforma" formControlName="platformName">
-              <input class="field" placeholder="URL pública" formControlName="publicUrl">
+              <label class="space-y-1">
+                <span class="text-xs font-bold text-slate-500">Nome da plataforma <span class="text-red-500">*</span></span>
+                <input class="field" placeholder="Nome da plataforma" formControlName="platformName">
+              </label>
+              <label class="space-y-1">
+                <span class="text-xs font-bold text-slate-500">URL pública <span class="text-red-500">*</span></span>
+                <input class="field" placeholder="https://app.arqly.com.br" formControlName="publicUrl">
+              </label>
             </div>
             <div class="grid gap-4 md:grid-cols-2">
-              <input class="field" placeholder="URL frontend" formControlName="frontendUrl">
-              <input class="field" placeholder="URL backend" formControlName="backendUrl">
+              <label class="space-y-1">
+                <span class="text-xs font-bold text-slate-500">URL frontend <span class="text-red-500">*</span></span>
+                <input class="field" placeholder="http://localhost:4200" formControlName="frontendUrl">
+              </label>
+              <label class="space-y-1">
+                <span class="text-xs font-bold text-slate-500">URL backend <span class="text-red-500">*</span></span>
+                <input class="field" placeholder="http://localhost:8080" formControlName="backendUrl">
+              </label>
             </div>
             <div class="grid gap-4 md:grid-cols-2">
-              <input class="field" placeholder="Idioma" formControlName="language">
-              <input class="field" placeholder="Timezone" formControlName="timezone">
+              <label class="space-y-1">
+                <span class="text-xs font-bold text-slate-500">Idioma <span class="text-red-500">*</span></span>
+                <input class="field" placeholder="pt-BR" formControlName="language">
+              </label>
+              <label class="space-y-1">
+                <span class="text-xs font-bold text-slate-500">Timezone <span class="text-red-500">*</span></span>
+                <input class="field" placeholder="America/Sao_Paulo" formControlName="timezone">
+              </label>
             </div>
           </div>
         </section>
@@ -102,16 +120,34 @@ type SettingsTab = 'general' | 'smtp';
           </div>
           <div class="space-y-6 p-6">
             <div class="grid gap-4 md:grid-cols-[1fr_12rem]">
-              <input class="field" placeholder="Host" formControlName="host">
-              <input class="field" type="number" placeholder="Porta" formControlName="port">
+              <label class="space-y-1">
+                <span class="text-xs font-bold text-slate-500">Host <span class="text-red-500">*</span></span>
+                <input class="field" placeholder="smtp.exemplo.com" formControlName="host">
+              </label>
+              <label class="space-y-1">
+                <span class="text-xs font-bold text-slate-500">Porta <span class="text-red-500">*</span></span>
+                <input class="field" type="number" placeholder="587" formControlName="port">
+              </label>
             </div>
             <div class="grid gap-4 md:grid-cols-2">
-              <input class="field" placeholder="Usuário" formControlName="username">
-              <input class="field" type="password" placeholder="Senha" formControlName="password">
+              <label class="space-y-1">
+                <span class="text-xs font-bold text-slate-500">Usuário</span>
+                <input class="field" placeholder="Usuário SMTP" formControlName="username">
+              </label>
+              <label class="space-y-1">
+                <span class="text-xs font-bold text-slate-500">Senha</span>
+                <input class="field" type="password" placeholder="Senha SMTP" formControlName="password">
+              </label>
             </div>
             <div class="grid gap-4 md:grid-cols-2">
-              <input class="field" placeholder="E-mail remetente" formControlName="senderEmail">
-              <input class="field" placeholder="Nome do remetente" formControlName="senderName">
+              <label class="space-y-1">
+                <span class="text-xs font-bold text-slate-500">E-mail remetente <span class="text-red-500">*</span></span>
+                <input class="field" placeholder="contato@arqly.com.br" formControlName="senderEmail">
+              </label>
+              <label class="space-y-1">
+                <span class="text-xs font-bold text-slate-500">Nome do remetente <span class="text-red-500">*</span></span>
+                <input class="field" placeholder="Arqly" formControlName="senderName">
+              </label>
             </div>
             <div class="grid gap-3 md:grid-cols-2">
               <label class="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3">

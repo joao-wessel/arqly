@@ -286,7 +286,7 @@ interface Stats {
                 </label>
                 <label class="space-y-1">
                   <span class="text-xs font-bold text-slate-500">Unidade de cobrança <span class="text-red-500">*</span></span>
-                  <app-arqly-select formControlName="billingUnit" placeholder="Selecione a unidade" [options]="billingUnitOptions" />
+                  <app-arqly-select formControlName="billingUnit" placeholder="Selecione a unidade" [options]="billingUnitOptions" panelMode="fixed" />
                 </label>
               </div>
             </section>
@@ -346,14 +346,14 @@ interface Stats {
               </label>
               <label class="space-y-1">
                 <span class="text-xs font-bold text-slate-500">Cor</span>
-                <div class="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3">
-                  <input class="h-10 w-12 rounded-xl border-0 bg-transparent p-0" type="color" title="Cor" formControlName="color">
+                <div class="flex h-12 items-center gap-3 rounded-xl border border-slate-200 bg-white px-4">
+                  <input class="h-8 w-12 rounded-xl border-0 bg-transparent p-0" type="color" title="Cor" formControlName="color">
                   <span class="text-sm font-bold text-slate-600">{{ categoryForm.controls.color.value }}</span>
                 </div>
               </label>
               <label class="space-y-1">
                 <span class="text-xs font-bold text-slate-500">Ícone</span>
-                <app-arqly-select formControlName="icon" placeholder="Selecione um ícone" [options]="iconOptions" />
+                <app-arqly-select formControlName="icon" placeholder="Selecione um ícone" [options]="iconOptions" panelMode="fixed" />
               </label>
               <label class="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white p-4">
                 <input class="arqly-checkbox mt-1" type="checkbox" formControlName="active">

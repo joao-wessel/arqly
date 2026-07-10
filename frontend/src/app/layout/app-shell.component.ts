@@ -126,6 +126,8 @@ export class AppShellComponent {
         { label: 'Dashboard', path: '/app/dashboard', icon: 'LayoutDashboard' },
         { label: 'Clientes', path: '/app/clients', icon: 'Building2' },
         { label: 'Serviços', path: '/app/services', icon: 'ListChecks' },
+        { label: 'Propostas', path: '/app/proposals', icon: 'FileText' },
+        { label: 'Projetos', path: '/app/projects', icon: 'Folder' },
         { label: 'Usuários', path: '/app/users', icon: 'Users' },
         { label: 'Minha conta', path: '/app/account/password', icon: 'ShieldCheck' }
       ]);

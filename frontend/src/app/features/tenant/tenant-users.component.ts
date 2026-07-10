@@ -133,9 +133,18 @@ interface Page<T> {
               <p class="mt-1 text-xs text-slate-500">Identificação e credenciais de acesso ao escritório.</p>
             </div>
             <div class="grid gap-4 md:grid-cols-2">
-              <input class="field" placeholder="Nome" formControlName="name">
-              <input class="field" type="email" placeholder="E-mail" formControlName="email">
-              <input class="field md:col-span-2" type="password" [placeholder]="editingUser() ? 'Nova senha (opcional)' : 'Senha inicial'" formControlName="password">
+              <label class="space-y-1">
+                <span class="text-xs font-bold text-slate-500">Nome <span class="text-red-500">*</span></span>
+                <input class="field" placeholder="Nome" formControlName="name">
+              </label>
+              <label class="space-y-1">
+                <span class="text-xs font-bold text-slate-500">E-mail <span class="text-red-500">*</span></span>
+                <input class="field" type="email" placeholder="E-mail" formControlName="email">
+              </label>
+              <label class="space-y-1 md:col-span-2">
+                <span class="text-xs font-bold text-slate-500">{{ editingUser() ? 'Nova senha' : 'Senha inicial' }} @if (!editingUser()) { <span class="text-red-500">*</span> }</span>
+                <input class="field" type="password" [placeholder]="editingUser() ? 'Nova senha (opcional)' : 'Senha inicial'" formControlName="password">
+              </label>
             </div>
           </section>
 

@@ -1,6 +1,7 @@
 package com.arqly.backend.service;
 
 import com.arqly.backend.dto.ClientDtos.ClientPortalAccessResponse;
+import com.arqly.backend.dto.ClientDtos.ClientPortalProposalResponse;
 import com.arqly.backend.dto.ClientDtos.ClientPublicResponse;
 import com.arqly.backend.dto.ClientDtos.ClientRequest;
 import com.arqly.backend.dto.ClientDtos.ClientResponse;
@@ -10,11 +11,13 @@ import com.arqly.backend.entity.Client;
 import com.arqly.backend.entity.ClientPersonType;
 import com.arqly.backend.entity.ClientPortalAccess;
 import com.arqly.backend.entity.ClientStatus;
+import com.arqly.backend.entity.ProposalStatus;
 import com.arqly.backend.exception.BusinessException;
 import com.arqly.backend.exception.NotFoundException;
 import com.arqly.backend.mapper.ClientMapper;
 import com.arqly.backend.repository.ClientPortalAccessRepository;
 import com.arqly.backend.repository.ClientRepository;
+import com.arqly.backend.repository.ProposalRepository;
 import com.arqly.backend.repository.TenantRepository;
 import jakarta.persistence.criteria.Predicate;
 import java.time.Instant;
@@ -32,14 +35,17 @@ import org.springframework.transaction.annotation.Transactional;
 public class ClientService {
     private final ClientRepository clientRepository;
     private final ClientPortalAccessRepository portalRepository;
+    private final ProposalRepository proposalRepository;
     private final TenantRepository tenantRepository;
     private final ClientMapper mapper;
     private final SettingsService settingsService;
 
     public ClientService(ClientRepository clientRepository, ClientPortalAccessRepository portalRepository,
-                         TenantRepository tenantRepository, ClientMapper mapper, SettingsService settingsService) {
+                         ProposalRepository proposalRepository, TenantRepository tenantRepository, ClientMapper mapper,
+                         SettingsService settingsService) {
         this.clientRepository = clientRepository;
         this.portalRepository = portalRepository;
+        this.proposalRepository = proposalRepository;
         this.tenantRepository = tenantRepository;
         this.mapper = mapper;
         this.settingsService = settingsService;
@@ -131,9 +137,25 @@ public class ClientService {
             throw new BusinessException("Cliente indisponível.");
         }
         access.setLastAccessAt(Instant.now());
+        var proposals = proposalRepository.findAllByClientIdAndDeletedFalseAndStatusInOrderByCreatedAtDesc(
+                        client.getId(),
+                        List.of(ProposalStatus.SENT, ProposalStatus.VIEWED, ProposalStatus.ACCEPTED)
+                ).stream()
+                .map(proposal -> new ClientPortalProposalResponse(
+                        proposal.getId(),
+                        proposal.getNumber(),
+                        proposal.getTitle(),
+                        proposal.getStatus(),
+                        proposal.getTotal(),
+                        proposal.getValidUntil(),
+                        settingsService.getGeneral().publicUrl() + "/portal/" + token + "/proposals/" + proposal.getId(),
+                        proposal.getCreatedAt()
+                ))
+                .toList();
         return new PortalPublicResponse(
                 new ClientPublicResponse(client.getId(), displayName(client), client.getEmail(), client.getPhone(), client.getCity(), client.getState()),
                 List.of(),
+                proposals,
                 "Bem-vindo ao portal do cliente Arqly."
         );
     }

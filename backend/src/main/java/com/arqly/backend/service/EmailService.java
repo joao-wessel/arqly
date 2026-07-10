@@ -5,6 +5,7 @@ import jakarta.mail.MessagingException;
 import java.util.Properties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -57,7 +58,29 @@ public class EmailService {
         );
     }
 
+    public void sendProposal(String to, String subject, String message, String link, byte[] pdf, String filename) {
+        sendActionEmail(
+                to,
+                subject,
+                "Proposta comercial",
+                message == null || message.isBlank()
+                        ? "Sua proposta comercial está pronta para visualização. Você também pode acessar o link abaixo para aceitar ou recusar."
+                        : message,
+                "Visualizar proposta",
+                link,
+                "O PDF da proposta está anexado neste e-mail.",
+                pdf,
+                filename
+        );
+        log.info("Proposta enviada para {}.", to);
+    }
+
     private void sendActionEmail(String to, String subject, String title, String text, String buttonLabel, String link, String footnote) {
+        sendActionEmail(to, subject, title, text, buttonLabel, link, footnote, null, null);
+    }
+
+    private void sendActionEmail(String to, String subject, String title, String text, String buttonLabel, String link, String footnote,
+                                 byte[] attachment, String attachmentName) {
         try {
             SmtpSettings settings = settingsService.getSmtp();
             var sender = sender(settings);
@@ -68,6 +91,9 @@ public class EmailService {
             helper.setSubject(subject);
             helper.setText(plainText(title, text, buttonLabel, link, footnote), html(title, text, buttonLabel, link, footnote));
             helper.addInline("arqlyLogo", new ClassPathResource("email/arqly-logo.png"), "image/png");
+            if (attachment != null && attachmentName != null) {
+                helper.addAttachment(attachmentName, new ByteArrayResource(attachment), "application/pdf");
+            }
             sender.send(message);
         } catch (MessagingException ex) {
             throw new IllegalStateException("Não foi possível montar o e-mail.", ex);

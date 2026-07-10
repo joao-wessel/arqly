@@ -31,9 +31,18 @@ import { ToastService } from '../../shared/components/toast/toast.service';
 
         <div class="space-y-5 p-6">
           <div class="grid gap-4 md:grid-cols-2">
-            <input class="field md:col-span-2" type="password" placeholder="Senha atual" formControlName="currentPassword">
-            <input class="field" type="password" placeholder="Nova senha" formControlName="newPassword">
-            <input class="field" type="password" placeholder="Confirmar nova senha" formControlName="confirmPassword">
+            <label class="space-y-1 md:col-span-2">
+              <span class="text-xs font-bold text-slate-500">Senha atual <span class="text-red-500">*</span></span>
+              <input class="field" type="password" placeholder="Senha atual" formControlName="currentPassword">
+            </label>
+            <label class="space-y-1">
+              <span class="text-xs font-bold text-slate-500">Nova senha <span class="text-red-500">*</span></span>
+              <input class="field" type="password" placeholder="Nova senha" formControlName="newPassword">
+            </label>
+            <label class="space-y-1">
+              <span class="text-xs font-bold text-slate-500">Confirmar nova senha <span class="text-red-500">*</span></span>
+              <input class="field" type="password" placeholder="Confirmar nova senha" formControlName="confirmPassword">
+            </label>
           </div>
 
           @if (message) {
