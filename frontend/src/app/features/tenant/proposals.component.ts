@@ -3,13 +3,18 @@ import { HttpClient } from '@angular/common/http';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
+import { RouterLink } from '@angular/router';
 import { ApiResponse } from '../../core/auth/auth.models';
+import { ArqlyCurrencyInputComponent } from '../../shared/components/arqly-currency-input.component';
+import { ArqlyDatePickerComponent } from '../../shared/components/arqly-date-picker.component';
 import { ArqlySelectComponent } from '../../shared/components/arqly-select.component';
 import { ToastService } from '../../shared/components/toast/toast.service';
+import { ContextDocumentsComponent } from '../../shared/components/context-documents.component';
 
 type ProposalStatus = 'DRAFT' | 'SENT' | 'VIEWED' | 'ACCEPTED' | 'REJECTED' | 'EXPIRED' | 'CANCELLED';
 type BillingUnit = 'UN' | 'M2' | 'M' | 'HOUR' | 'DAY' | 'MONTH' | 'PROJECT' | 'VISIT' | 'OTHER';
-type ProposalTab = 'data' | 'services' | 'payments' | 'notes' | 'summary';
+type OriginType = 'MANUAL' | 'BRIEFING' | 'PROPOSAL';
+type ProposalTab = 'data' | 'services' | 'payments' | 'notes' | 'summary' | 'documents';
 type ProposalConfirmAction = 'send' | 'delete' | 'createProject';
 
 interface Page<T> {
@@ -25,6 +30,14 @@ interface ClientOption {
   email: string;
 }
 
+interface BriefingOption {
+  id: string;
+  clientId: string;
+  clientName: string;
+  title: string;
+  proposalGenerated: boolean;
+}
+
 interface CatalogService {
   id: string;
   name: string;
@@ -38,11 +51,21 @@ interface ProjectTemplateOption {
   name: string;
 }
 
+interface TenantUserOption {
+  id: string;
+  name: string;
+  email: string;
+  tenantAdmin: boolean;
+}
+
 interface ProposalSummary {
   id: string;
   number: string;
   clientId: string;
   clientName: string;
+  briefingId?: string | null;
+  briefingTitle?: string | null;
+  originType: OriginType;
   title: string;
   total: number;
   status: ProposalStatus;
@@ -103,7 +126,7 @@ interface ProposalStats {
 @Component({
   selector: 'app-proposals',
   standalone: true,
-  imports: [ReactiveFormsModule, DatePipe, DecimalPipe, LucideAngularModule, ArqlySelectComponent],
+  imports: [ReactiveFormsModule, DatePipe, DecimalPipe, LucideAngularModule, RouterLink, ArqlySelectComponent, ArqlyDatePickerComponent, ArqlyCurrencyInputComponent, ContextDocumentsComponent],
   template: `
     <section class="space-y-5">
       <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
@@ -118,7 +141,7 @@ interface ProposalStats {
         </button>
       </div>
 
-      <div class="grid gap-4 md:grid-cols-5">
+      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <div class="card p-5"><p class="text-sm font-bold text-slate-500">Propostas</p><strong class="mt-2 block text-3xl">{{ stats()?.quantity || 0 }}</strong></div>
         <div class="card p-5"><p class="text-sm font-bold text-slate-500">Valor total</p><strong class="mt-2 block text-2xl">R$ {{ stats()?.totalValue || 0 | number:'1.2-2' }}</strong></div>
         <div class="card p-5"><p class="text-sm font-bold text-slate-500">Aceitas</p><strong class="mt-2 block text-3xl text-arqly-700">{{ stats()?.accepted || 0 }}</strong></div>
@@ -140,21 +163,21 @@ interface ProposalStats {
             <span class="text-xs font-bold text-slate-500">Status</span>
             <app-arqly-select formControlName="status" placeholder="Todos" [options]="statusFilterOptions" />
           </label>
-          <label class="space-y-1">
+          <div class="space-y-1">
             <span class="text-xs font-bold text-slate-500">Data inicial</span>
-            <input class="field" type="date" formControlName="from">
-          </label>
-          <label class="space-y-1">
+            <app-arqly-date-picker formControlName="from" placeholder="Data inicial" />
+          </div>
+          <div class="space-y-1">
             <span class="text-xs font-bold text-slate-500">Data final</span>
-            <input class="field" type="date" formControlName="to">
-          </label>
+            <app-arqly-date-picker formControlName="to" placeholder="Data final" />
+          </div>
           <label class="space-y-1">
             <span class="text-xs font-bold text-slate-500">Valor mínimo</span>
-            <input class="field" type="number" placeholder="0,00" formControlName="minValue">
+            <app-arqly-currency-input formControlName="minValue" />
           </label>
           <label class="space-y-1">
             <span class="text-xs font-bold text-slate-500">Valor máximo</span>
-            <input class="field" type="number" placeholder="0,00" formControlName="maxValue">
+            <app-arqly-currency-input formControlName="maxValue" />
           </label>
           <button class="btn-secondary h-12 self-end justify-center px-4" type="submit"><lucide-icon name="Search" size="18"></lucide-icon>Pesquisar</button>
         </form>
@@ -166,6 +189,7 @@ interface ProposalStats {
                 <th class="px-6 py-4">Número</th>
                 <th class="px-6 py-4">Cliente</th>
                 <th class="px-6 py-4">Título</th>
+                <th class="px-6 py-4">Origem</th>
                 <th class="px-6 py-4">Valor</th>
                 <th class="px-6 py-4">Status</th>
                 <th class="px-6 py-4">Validade</th>
@@ -184,6 +208,7 @@ interface ProposalStats {
                       <p class="mt-1 text-xs font-bold text-arqly-700">Projeto criado</p>
                     }
                   </td>
+                  <td class="px-6 py-4"><span class="rounded-full px-3 py-1 text-xs font-bold" [class]="originClass(proposal.originType)">{{ originLabel(proposal.originType) }}</span><p class="mt-1 text-xs text-slate-400">{{ proposal.briefingTitle || 'Sem briefing' }}</p></td>
                   <td class="px-6 py-4">R$ {{ proposal.total || 0 | number:'1.2-2' }}</td>
                   <td class="px-6 py-4"><span class="rounded-full px-3 py-1 text-xs font-bold" [class]="statusClass(proposal.status)">{{ statusLabel(proposal.status) }}</span></td>
                   <td class="px-6 py-4 text-slate-500">{{ proposal.validUntil ? (proposal.validUntil | date:'dd/MM/yyyy') : '-' }}</td>
@@ -191,6 +216,7 @@ interface ProposalStats {
                   <td class="px-6 py-4">
                     <div class="flex justify-end gap-2">
                       <button class="btn-secondary px-3 py-2" type="button" title="Visualizar" (click)="openModal(proposal.id, true)"><lucide-icon name="Search" size="16"></lucide-icon></button>
+                      <a class="btn-secondary px-3 py-2" title="Arquivos" [routerLink]="['/app/files', 'PROPOSAL', proposal.id]"><lucide-icon name="Archive" size="16"></lucide-icon></a>
                       <button class="btn-secondary px-3 py-2" type="button" title="Editar" [disabled]="proposal.status !== 'DRAFT'" (click)="openModal(proposal.id)"><lucide-icon name="Pencil" size="16"></lucide-icon></button>
                       <button class="btn-secondary px-3 py-2" type="button" title="Enviar" [disabled]="proposal.status !== 'DRAFT'" (click)="openConfirmModal('send', proposal)"><lucide-icon name="Send" size="16"></lucide-icon></button>
                       <button class="btn-secondary px-3 py-2" type="button" title="PDF" (click)="downloadPdf(proposal)"><lucide-icon name="FileText" size="16"></lucide-icon></button>
@@ -205,7 +231,7 @@ interface ProposalStats {
                   </td>
                 </tr>
               } @empty {
-                <tr><td colspan="8" class="px-6 py-12 text-center text-slate-500">Nenhuma proposta cadastrada.</td></tr>
+                <tr><td colspan="9" class="px-6 py-12 text-center text-slate-500">Nenhuma proposta cadastrada.</td></tr>
               }
             </tbody>
           </table>
@@ -259,29 +285,64 @@ interface ProposalStats {
             <button class="btn-secondary px-3 py-2" type="button" (click)="closeModal()"><lucide-icon name="X" size="18"></lucide-icon></button>
           </div>
 
-          <div class="grid gap-2 rounded-2xl bg-slate-50/70 p-2 md:grid-cols-5">
+          <div class="grid gap-2 rounded-2xl bg-slate-50/70 p-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6">
             @for (tab of tabs; track tab.value) {
-              <button class="rounded-xl px-4 py-3 text-sm font-bold transition" type="button"
-                      [class.bg-white]="activeTab() === tab.value"
-                      [class.text-arqly-700]="activeTab() === tab.value"
-                      [class.shadow-sm]="activeTab() === tab.value"
-                      [class.text-slate-500]="activeTab() !== tab.value"
-                      (click)="activeTab.set(tab.value)">{{ tab.label }}</button>
+              @if (tab.value !== 'documents' || readOnly()) {
+                <button class="rounded-xl px-4 py-3 text-sm font-bold transition" type="button"
+                        [class.bg-white]="activeTab() === tab.value"
+                        [class.text-arqly-700]="activeTab() === tab.value"
+                        [class.shadow-sm]="activeTab() === tab.value"
+                        [class.text-slate-500]="activeTab() !== tab.value"
+                        (click)="activeTab.set(tab.value)">{{ tab.label }}</button>
+              }
             }
           </div>
 
           @if (activeTab() === 'data') {
             <section class="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
               <p class="text-xs font-extrabold uppercase tracking-[0.22em] text-arqly-700">Dados</p>
+              @if (!readOnly()) {
+                <div class="mt-4 rounded-2xl border border-slate-200 bg-white p-4">
+                  <p class="text-sm font-extrabold">Deseja utilizar um briefing?</p>
+                  <p class="mt-1 text-sm text-slate-500">O fluxo recomendado mantém a origem comercial registrada, mas a proposta também pode ser criada manualmente.</p>
+                  <div class="mt-3 grid gap-3 md:grid-cols-2">
+                    <button class="rounded-2xl border p-4 text-left transition" type="button"
+                      [class.border-arqly-500]="proposalOriginMode() === 'BRIEFING'"
+                      [class.bg-arqly-50]="proposalOriginMode() === 'BRIEFING'"
+                      [class.border-slate-200]="proposalOriginMode() !== 'BRIEFING'"
+                      (click)="setProposalOriginMode('BRIEFING')">
+                      <strong class="block">Sim, usar briefing</strong>
+                      <span class="mt-1 block text-sm text-slate-500">Vincula a proposta ao primeiro contato.</span>
+                    </button>
+                    <button class="rounded-2xl border p-4 text-left transition" type="button"
+                      [class.border-arqly-500]="proposalOriginMode() === 'MANUAL'"
+                      [class.bg-arqly-50]="proposalOriginMode() === 'MANUAL'"
+                      [class.border-slate-200]="proposalOriginMode() !== 'MANUAL'"
+                      (click)="setProposalOriginMode('MANUAL')">
+                      <strong class="block">Não, criar manualmente</strong>
+                      <span class="mt-1 block text-sm text-slate-500">Útil para negociações rápidas ou recorrentes.</span>
+                    </button>
+                  </div>
+                  @if (proposalOriginMode() === 'MANUAL') {
+                    <p class="mt-3 text-sm text-slate-500">Projetos e propostas criados manualmente não possuem rastreabilidade completa do processo comercial.</p>
+                  }
+                </div>
+              }
               <div class="mt-4 grid gap-4 md:grid-cols-2">
                 <label class="space-y-1">
                   <span class="text-xs font-bold text-slate-500">Cliente <span class="text-red-500">*</span></span>
                   <app-arqly-select formControlName="clientId" placeholder="Selecione o cliente" [options]="clientFormOptions()" />
                 </label>
-                <label class="space-y-1">
+                @if (proposalOriginMode() === 'BRIEFING') {
+                  <label class="space-y-1">
+                    <span class="text-xs font-bold text-slate-500">Briefing <span class="text-red-500">*</span></span>
+                    <app-arqly-select formControlName="briefingId" placeholder="Selecione o briefing" [options]="briefingOptions()" panelMode="fixed" />
+                  </label>
+                }
+                <div class="space-y-1">
                   <span class="text-xs font-bold text-slate-500">Validade</span>
-                  <input class="field" type="date" formControlName="validUntil">
-                </label>
+                  <app-arqly-date-picker formControlName="validUntil" placeholder="Selecione" />
+                </div>
                 <label class="space-y-1 md:col-span-2">
                   <span class="text-xs font-bold text-slate-500">Título <span class="text-red-500">*</span></span>
                   <input class="field" placeholder="Ex.: Proposta para projeto residencial" formControlName="title">
@@ -310,11 +371,11 @@ interface ProposalStats {
                   </label>
                   <label class="space-y-1">
                     <span class="text-xs font-bold text-slate-500">Valor unitário</span>
-                    <input class="field" type="number" min="0" step="0.01" placeholder="0,00" [formControl]="itemForm.controls.unitValue">
+                    <app-arqly-currency-input [formControl]="itemForm.controls.unitValue" />
                   </label>
                   <label class="space-y-1">
                     <span class="text-xs font-bold text-slate-500">Desconto</span>
-                    <input class="field" type="number" min="0" step="0.01" placeholder="0,00" [formControl]="itemForm.controls.discount">
+                    <app-arqly-currency-input [formControl]="itemForm.controls.discount" />
                   </label>
                   <button class="btn-secondary h-12 self-end justify-center px-4" type="button" (click)="addItem()">Adicionar</button>
                   <label class="space-y-1 md:col-span-6">
@@ -370,12 +431,12 @@ interface ProposalStats {
                   </label>
                   <label class="space-y-1">
                     <span class="text-xs font-bold text-slate-500">Valor</span>
-                    <input class="field" type="number" min="0" step="0.01" placeholder="0,00" [formControl]="paymentForm.controls.value">
+                    <app-arqly-currency-input [formControl]="paymentForm.controls.value" />
                   </label>
-                  <label class="space-y-1">
+                  <div class="space-y-1">
                     <span class="text-xs font-bold text-slate-500">Vencimento</span>
-                    <input class="field" type="date" [formControl]="paymentForm.controls.dueDate">
-                  </label>
+                    <app-arqly-date-picker [formControl]="paymentForm.controls.dueDate" placeholder="Selecione" />
+                  </div>
                   <button class="btn-secondary md:col-span-5" type="button" (click)="addPayment()">Adicionar parcela</button>
                 </div>
               </div>
@@ -433,11 +494,11 @@ interface ProposalStats {
               <div class="rounded-2xl border border-slate-200 bg-white p-5">
                 <label class="space-y-1">
                   <span class="text-xs font-bold text-slate-500">Desconto geral</span>
-                  <input class="field" type="number" min="0" step="0.01" formControlName="discount">
+                  <app-arqly-currency-input formControlName="discount" />
                 </label>
                 <label class="mt-3 block space-y-1">
                   <span class="text-xs font-bold text-slate-500">Acréscimo</span>
-                  <input class="field" type="number" min="0" step="0.01" formControlName="addition">
+                  <app-arqly-currency-input formControlName="addition" />
                 </label>
                 <div class="mt-5 space-y-3 text-sm">
                   <div class="flex justify-between"><span>Subtotal</span><strong>R$ {{ subtotal() | number:'1.2-2' }}</strong></div>
@@ -449,6 +510,12 @@ interface ProposalStats {
                 </div>
               </div>
             </section>
+          }
+
+          @if (activeTab() === 'documents') {
+            @if (readOnly() && editingDetail()) {
+              <app-context-documents [proposalId]="editingDetail()!.id" />
+            }
           }
 
           <div class="flex flex-col gap-3 border-t border-slate-100 pt-4 md:flex-row md:items-center md:justify-between">
@@ -498,18 +565,22 @@ interface ProposalStats {
                 <app-arqly-select formControlName="templateId" placeholder="Sem modelo" [options]="projectTemplateOptions()" panelMode="fixed" />
               </label>
               <div class="grid gap-3 md:grid-cols-2">
-                <label class="space-y-1">
+                <div class="space-y-1">
                   <span class="text-xs font-bold text-slate-500">Início</span>
-                  <input class="field" type="date" formControlName="startDate">
-                </label>
-                <label class="space-y-1">
+                  <app-arqly-date-picker formControlName="startDate" placeholder="Selecione" />
+                </div>
+                <div class="space-y-1">
                   <span class="text-xs font-bold text-slate-500">Previsão</span>
-                  <input class="field" type="date" formControlName="expectedEndDate">
-                </label>
+                  <app-arqly-date-picker formControlName="expectedEndDate" placeholder="Selecione" />
+                </div>
               </div>
               <label class="space-y-1">
-                <span class="text-xs font-bold text-slate-500">Arquiteto responsável</span>
-                <input class="field" formControlName="responsibleArchitect" placeholder="Nome do responsável">
+                <span class="text-xs font-bold text-slate-500">Responsável</span>
+                <app-arqly-select formControlName="responsibleUserId" placeholder="Selecione um usuário" [options]="tenantUserOptions()" panelMode="fixed" />
+              </label>
+              <label class="space-y-1">
+                <span class="text-xs font-bold text-slate-500">Gerente do projeto</span>
+                <app-arqly-select formControlName="projectManagerId" placeholder="Opcional" [options]="tenantUserOptions(true)" panelMode="fixed" />
               </label>
             </form>
           }
@@ -535,8 +606,10 @@ export class ProposalsComponent implements OnInit {
 
   readonly proposals = signal<ProposalSummary[]>([]);
   readonly clients = signal<ClientOption[]>([]);
+  readonly briefings = signal<BriefingOption[]>([]);
   readonly services = signal<CatalogService[]>([]);
   readonly projectTemplates = signal<ProjectTemplateOption[]>([]);
+  readonly tenantUsers = signal<TenantUserOption[]>([]);
   readonly stats = signal<ProposalStats | null>(null);
   readonly items = signal<ProposalItem[]>([]);
   readonly payments = signal<PaymentCondition[]>([]);
@@ -544,6 +617,7 @@ export class ProposalsComponent implements OnInit {
   readonly readOnly = signal(false);
   readonly editingId = signal<string | null>(null);
   readonly editingDetail = signal<ProposalDetail | null>(null);
+  readonly proposalOriginMode = signal<'BRIEFING' | 'MANUAL'>('MANUAL');
   readonly activeTab = signal<ProposalTab>('data');
   readonly page = signal(0);
   readonly totalPages = signal(0);
@@ -556,6 +630,8 @@ export class ProposalsComponent implements OnInit {
     templateId: [''],
     startDate: [''],
     expectedEndDate: [''],
+    responsibleUserId: [''],
+    projectManagerId: [''],
     responsibleArchitect: [''],
     internalNotes: ['']
   });
@@ -565,7 +641,8 @@ export class ProposalsComponent implements OnInit {
     { label: 'Serviços', value: 'services' },
     { label: 'Pagamentos', value: 'payments' },
     { label: 'Observações', value: 'notes' },
-    { label: 'Resumo', value: 'summary' }
+    { label: 'Resumo', value: 'summary' },
+    { label: 'Documentos', value: 'documents' }
   ];
   readonly statusFilterOptions = [
     { label: 'Todos', value: '' },
@@ -589,6 +666,7 @@ export class ProposalsComponent implements OnInit {
   });
   readonly proposalForm = this.fb.nonNullable.group({
     clientId: ['', Validators.required],
+    briefingId: [''],
     title: ['', Validators.required],
     description: [''],
     validUntil: [''],
@@ -615,6 +693,7 @@ export class ProposalsComponent implements OnInit {
 
   ngOnInit() {
     this.loadOptions();
+    this.proposalForm.controls.briefingId.valueChanges.subscribe((id) => this.applyBriefingDefaults(id));
     this.reload();
   }
 
@@ -644,10 +723,14 @@ export class ProposalsComponent implements OnInit {
   loadOptions() {
     this.http.get<ApiResponse<Page<ClientOption>>>('http://localhost:8080/api/tenant/clients?page=0&size=200&sort=createdAt,desc')
       .subscribe((response) => this.clients.set(response.data.content));
+    this.http.get<ApiResponse<Page<BriefingOption>>>('http://localhost:8080/api/tenant/briefings?page=0&size=200&sort=createdAt,desc')
+      .subscribe((response) => this.briefings.set(response.data.content));
     this.http.get<ApiResponse<Page<CatalogService>>>('http://localhost:8080/api/tenant/service-catalog/services?page=0&size=200&sort=name,asc&active=true')
       .subscribe((response) => this.services.set(response.data.content));
     this.http.get<ApiResponse<ProjectTemplateOption[]>>('http://localhost:8080/api/tenant/projects/templates/options')
       .subscribe((response) => this.projectTemplates.set(response.data));
+    this.http.get<ApiResponse<Page<TenantUserOption>>>('http://localhost:8080/api/tenant/users?size=200&sort=name,asc')
+      .subscribe((response) => this.tenantUsers.set(response.data.content));
   }
 
   search() {
@@ -671,6 +754,7 @@ export class ProposalsComponent implements OnInit {
     this.readOnly.set(readOnly);
     this.editingId.set(id || null);
     this.editingDetail.set(null);
+    this.proposalOriginMode.set('MANUAL');
     this.activeTab.set('data');
     this.items.set([]);
     this.payments.set([]);
@@ -679,6 +763,7 @@ export class ProposalsComponent implements OnInit {
     this.paymentForm.enable();
     this.proposalForm.reset({
       clientId: '',
+      briefingId: '',
       title: '',
       description: '',
       validUntil: '',
@@ -693,8 +778,10 @@ export class ProposalsComponent implements OnInit {
       this.http.get<ApiResponse<ProposalDetail>>(`${this.baseUrl}/${id}`).subscribe((response) => {
         const proposal = response.data;
         this.editingDetail.set(proposal);
+        this.proposalOriginMode.set(proposal.briefingId ? 'BRIEFING' : 'MANUAL');
         this.proposalForm.patchValue({
           clientId: proposal.clientId,
+          briefingId: proposal.briefingId || '',
           title: proposal.title,
           description: proposal.description || '',
           validUntil: proposal.validUntil || '',
@@ -724,6 +811,11 @@ export class ProposalsComponent implements OnInit {
 
   closeModal() {
     this.modalOpen.set(false);
+  }
+
+  setProposalOriginMode(mode: 'BRIEFING' | 'MANUAL') {
+    this.proposalOriginMode.set(mode);
+    if (mode === 'MANUAL') this.proposalForm.patchValue({ briefingId: '' });
   }
 
   addItem() {
@@ -782,6 +874,10 @@ export class ProposalsComponent implements OnInit {
   }
 
   save() {
+    if (this.proposalOriginMode() === 'BRIEFING' && !this.proposalForm.controls.briefingId.value) {
+      this.toast.validation('Selecione o briefing de origem.');
+      return;
+    }
     if (this.proposalForm.invalid || this.items().length === 0) {
       this.proposalForm.markAllAsTouched();
       this.toast.validation('Informe cliente, título e pelo menos um serviço.');
@@ -811,6 +907,8 @@ export class ProposalsComponent implements OnInit {
         templateId: '',
         startDate: '',
         expectedEndDate: '',
+        responsibleUserId: '',
+        projectManagerId: '',
         responsibleArchitect: '',
         internalNotes: ''
       });
@@ -912,6 +1010,8 @@ export class ProposalsComponent implements OnInit {
       templateId: value.templateId || null,
       startDate: value.startDate || null,
       expectedEndDate: value.expectedEndDate || null,
+      responsibleUserId: value.responsibleUserId || null,
+      projectManagerId: value.projectManagerId || null,
       internalNotes: value.internalNotes || null
     }).subscribe({
       next: () => {
@@ -942,12 +1042,47 @@ export class ProposalsComponent implements OnInit {
     return this.clients().map((client) => ({ label: client.displayName, value: client.id }));
   }
 
+  briefingOptions() {
+    const clientId = this.proposalForm.controls.clientId.value;
+    return this.briefings()
+      .filter((briefing) => !briefing.proposalGenerated || briefing.id === this.proposalForm.controls.briefingId.value)
+      .filter((briefing) => !clientId || briefing.clientId === clientId)
+      .map((briefing) => ({ label: briefing.title, value: briefing.id }));
+  }
+
+  applyBriefingDefaults(id: string) {
+    if (!id || this.readOnly()) return;
+    this.http.get<ApiResponse<any>>(`http://localhost:8080/api/tenant/briefings/${id}`).subscribe((response) => {
+      const briefing = response.data;
+      const requirements = (briefing.requirements || []).map((item: any) => item.description).filter(Boolean);
+      const scope = [
+        briefing.projectTemplateName ? `Modelo: ${briefing.projectTemplateName}` : '',
+        briefing.approximateArea ? `Área aproximada: ${briefing.approximateArea} m²` : '',
+        briefing.workAddress ? `Endereço da obra: ${briefing.workAddress}` : '',
+        requirements.length ? `Programa de necessidades: ${requirements.join('; ')}` : ''
+      ].filter(Boolean).join('\n');
+      this.proposalForm.patchValue({
+        clientId: briefing.clientId || this.proposalForm.controls.clientId.value,
+        title: this.proposalForm.controls.title.value || briefing.title || '',
+        description: this.proposalForm.controls.description.value || briefing.description || '',
+        scope: this.proposalForm.controls.scope.value || scope,
+        internalNotes: this.proposalForm.controls.internalNotes.value || briefing.preferenceNotes || '',
+        clientNotes: this.proposalForm.controls.clientNotes.value || briefing.restrictionNotes || ''
+      }, { emitEvent: false });
+    });
+  }
+
   serviceOptions() {
     return this.services().map((service) => ({ label: service.name, value: service.id }));
   }
 
   projectTemplateOptions() {
     return [{ label: 'Sem modelo', value: '' }, ...this.projectTemplates().map((template) => ({ label: template.name, value: template.id }))];
+  }
+
+  tenantUserOptions(includeEmpty = false) {
+    const options = this.tenantUsers().map((user) => ({ label: `${user.name} · ${user.tenantAdmin ? 'Administrador' : 'Usuário comum'}`, value: user.id }));
+    return includeEmpty ? [{ label: 'Sem gerente', value: '' }, ...options] : options;
   }
 
   selectedClientName() {
@@ -982,6 +1117,9 @@ export class ProposalsComponent implements OnInit {
     return 'bg-slate-100 text-slate-600';
   }
 
+  originLabel(origin: OriginType) { return origin === 'BRIEFING' ? 'Briefing' : origin === 'PROPOSAL' ? 'Proposta' : 'Manual'; }
+  originClass(origin: OriginType) { return origin === 'BRIEFING' ? 'bg-arqly-50 text-arqly-700' : 'bg-blue-50 text-blue-700'; }
+
   unitLabel(unit: BillingUnit) {
     return {
       UN: 'UN',
@@ -1008,6 +1146,7 @@ export class ProposalsComponent implements OnInit {
     const value = this.proposalForm.getRawValue();
     return {
       ...value,
+      briefingId: this.proposalOriginMode() === 'BRIEFING' ? value.briefingId || null : null,
       validUntil: value.validUntil || null,
       discount: Number(value.discount || 0),
       addition: Number(value.addition || 0),

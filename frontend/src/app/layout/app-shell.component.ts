@@ -17,12 +17,12 @@ import { LogoComponent } from '../shared/components/logo.component';
         <nav class="mt-10 space-y-2">
           @for (item of navItems(); track item.label) {
             <a [routerLink]="item.path"
-               [class.bg-arqly-600]="isActive(item)"
-               [class.text-white]="isActive(item)"
-               [class.shadow-lg]="isActive(item)"
-               class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-slate-600 transition hover:bg-arqly-50 hover:text-arqly-700">
-              <lucide-icon [name]="item.icon" size="20"></lucide-icon>
-              {{ item.label }}
+             [class.bg-arqly-600]="isActive(item)"
+             [class.text-white]="isActive(item)"
+             [class.shadow-lg]="isActive(item)"
+             class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-slate-600 transition hover:bg-arqly-50 hover:text-arqly-700">
+            <lucide-icon [name]="item.icon" size="20"></lucide-icon>
+            {{ item.label }}
             </a>
           }
         </nav>
@@ -32,7 +32,7 @@ import { LogoComponent } from '../shared/components/logo.component';
             {{ initials() }}
           </div>
           <div class="min-w-0">
-            <p class="truncate text-sm font-bold">{{ auth.currentUser()?.name || 'Usuário' }}</p>
+            <p class="truncate text-sm font-bold">{{ auth.currentUser()?.name || 'usuário' }}</p>
             <p class="truncate text-xs text-slate-500">{{ roleLabel() }}</p>
           </div>
           <lucide-icon class="ml-auto text-slate-400" name="LogOut" size="18"></lucide-icon>
@@ -75,13 +75,13 @@ import { LogoComponent } from '../shared/components/logo.component';
           <nav class="mt-8 space-y-2">
             @for (item of navItems(); track item.label) {
               <a [routerLink]="item.path"
-                 [class.bg-arqly-600]="isActive(item)"
-                 [class.text-white]="isActive(item)"
-                 [class.shadow-lg]="isActive(item)"
-                 class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-slate-600 transition hover:bg-arqly-50 hover:text-arqly-700"
-                 (click)="mobileMenuOpen.set(false)">
-                <lucide-icon [name]="item.icon" size="20"></lucide-icon>
-                {{ item.label }}
+               [class.bg-arqly-600]="isActive(item)"
+               [class.text-white]="isActive(item)"
+               [class.shadow-lg]="isActive(item)"
+               class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-slate-600 transition hover:bg-arqly-50 hover:text-arqly-700"
+               (click)="mobileMenuOpen.set(false)">
+              <lucide-icon [name]="item.icon" size="20"></lucide-icon>
+              {{ item.label }}
               </a>
             }
           </nav>
@@ -90,7 +90,7 @@ import { LogoComponent } from '../shared/components/logo.component';
               {{ initials() }}
             </div>
             <div class="min-w-0">
-              <p class="truncate text-sm font-bold">{{ auth.currentUser()?.name || 'Usuário' }}</p>
+              <p class="truncate text-sm font-bold">{{ auth.currentUser()?.name || 'usuário' }}</p>
               <p class="truncate text-xs text-slate-500">{{ roleLabel() }}</p>
             </div>
             <lucide-icon class="ml-auto text-slate-400" name="LogOut" size="18"></lucide-icon>
@@ -125,9 +125,12 @@ export class AppShellComponent {
     : [
         { label: 'Dashboard', path: '/app/dashboard', icon: 'LayoutDashboard' },
         { label: 'Clientes', path: '/app/clients', icon: 'Building2' },
-        { label: 'Serviços', path: '/app/services', icon: 'ListChecks' },
+        { label: 'Briefings', path: '/app/briefings', icon: 'ClipboardList' },
         { label: 'Propostas', path: '/app/proposals', icon: 'FileText' },
         { label: 'Projetos', path: '/app/projects', icon: 'Folder' },
+        { label: 'Documentos', path: '/app/documents/generated', icon: 'FileText' },
+        { label: 'Arquivos', path: '/app/files', icon: 'Archive' },
+        { label: 'Serviços', path: '/app/services', icon: 'ListChecks' },
         { label: 'Usuários', path: '/app/users', icon: 'Users' },
         { label: 'Minha conta', path: '/app/account/password', icon: 'ShieldCheck' }
       ]);
@@ -147,10 +150,10 @@ export class AppShellComponent {
     if (this.auth.scope() === 'platform') {
       return 'Administrador da plataforma';
     }
-    return this.auth.currentUser()?.roles.includes('ROLE_TENANT_ADMIN') ? 'Administrador' : 'Usuário comum';
+    return this.auth.currentUser()?.roles.includes('ROLE_TENANT_ADMIN') ? 'Administrador' : 'usuário comum';
   }
 
   isActive(item: { label: string; path: string }) {
-    return this.navItems().find((navItem) => this.router.url.startsWith(navItem.path))?.label === item.label;
+    return this.router.url.startsWith(item.path);
   }
 }

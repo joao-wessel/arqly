@@ -1,6 +1,7 @@
 package com.arqly.backend.dto;
 
 import com.arqly.backend.entity.BillingUnit;
+import com.arqly.backend.entity.OriginType;
 import com.arqly.backend.entity.ProposalStatus;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
@@ -19,6 +20,7 @@ public final class ProposalDtos {
 
     public record ProposalRequest(
             @NotNull UUID clientId,
+            UUID briefingId,
             @NotBlank String title,
             String description,
             LocalDate validUntil,
@@ -61,6 +63,9 @@ public final class ProposalDtos {
             String number,
             UUID clientId,
             String clientName,
+            UUID briefingId,
+            String briefingTitle,
+            OriginType originType,
             String title,
             BigDecimal total,
             ProposalStatus status,
@@ -77,6 +82,9 @@ public final class ProposalDtos {
             UUID clientId,
             String clientName,
             String clientEmail,
+            UUID briefingId,
+            String briefingTitle,
+            OriginType originType,
             String title,
             String description,
             LocalDate validUntil,
@@ -129,7 +137,9 @@ public final class ProposalDtos {
             long accepted,
             long rejected,
             long expired,
-            long pending
+            long pending,
+            long manual,
+            long fromBriefings
     ) {}
 
     public record PortalProposalResponse(

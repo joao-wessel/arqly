@@ -12,11 +12,15 @@ import { TenantDashboardComponent } from './features/tenant/tenant-dashboard.com
 import { TenantUsersComponent } from './features/tenant/tenant-users.component';
 import { ChangePasswordComponent } from './features/account/change-password.component';
 import { ClientsComponent } from './features/tenant/clients.component';
+import { BriefingsComponent } from './features/tenant/briefings.component';
 import { ClientPortalComponent } from './features/portal/client-portal.component';
 import { ProposalPortalComponent } from './features/portal/proposal-portal.component';
 import { ServiceCatalogComponent } from './features/tenant/service-catalog.component';
 import { ProposalsComponent } from './features/tenant/proposals.component';
 import { ProjectDetailComponent, ProjectsComponent } from './features/tenant/projects.component';
+import { StageWorkspaceComponent } from './features/tenant/stage-workspace.component';
+import { DocumentsComponent } from './features/tenant/documents.component';
+import { FilesComponent } from './features/tenant/files.component';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent, data: { scope: 'tenant' } },
@@ -50,10 +54,17 @@ export const routes: Routes = [
     children: [
       { path: 'dashboard', component: TenantDashboardComponent },
       { path: 'clients', component: ClientsComponent },
+      { path: 'briefings', component: BriefingsComponent },
       { path: 'services', component: ServiceCatalogComponent },
       { path: 'proposals', component: ProposalsComponent },
       { path: 'projects', component: ProjectsComponent },
+      { path: 'projects/:projectId/stages/:stageId', component: StageWorkspaceComponent },
       { path: 'projects/:id', component: ProjectDetailComponent },
+      { path: 'documents', pathMatch: 'full', redirectTo: 'documents/generated' },
+      { path: 'documents/templates', component: DocumentsComponent, data: { documentView: 'templates' } },
+      { path: 'documents/generated', component: DocumentsComponent, data: { documentView: 'generated' } },
+      { path: 'files/:ownerType/:ownerId', component: FilesComponent },
+      { path: 'files', component: FilesComponent },
       { path: 'users', component: TenantUsersComponent },
       { path: 'account/password', component: ChangePasswordComponent },
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' }

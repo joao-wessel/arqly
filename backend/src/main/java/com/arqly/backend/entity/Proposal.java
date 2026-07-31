@@ -28,6 +28,10 @@ public class Proposal extends BaseEntity {
     @JoinColumn(name = "client_id", nullable = false)
     private Client client;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "briefing_id")
+    private Briefing briefing;
+
     @Column(nullable = false)
     private String number;
     @Column(nullable = false)
@@ -48,6 +52,10 @@ public class Proposal extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ProposalStatus status = ProposalStatus.DRAFT;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private OriginType originType = OriginType.MANUAL;
 
     @Column(columnDefinition = "text")
     private String scope;
@@ -91,6 +99,8 @@ public class Proposal extends BaseEntity {
     public void setTenant(Tenant tenant) { this.tenant = tenant; }
     public Client getClient() { return client; }
     public void setClient(Client client) { this.client = client; }
+    public Briefing getBriefing() { return briefing; }
+    public void setBriefing(Briefing briefing) { this.briefing = briefing; }
     public String getNumber() { return number; }
     public void setNumber(String number) { this.number = number; }
     public String getTitle() { return title; }
@@ -109,6 +119,8 @@ public class Proposal extends BaseEntity {
     public void setTotal(BigDecimal total) { this.total = total; }
     public ProposalStatus getStatus() { return status; }
     public void setStatus(ProposalStatus status) { this.status = status; }
+    public OriginType getOriginType() { return originType; }
+    public void setOriginType(OriginType originType) { this.originType = originType; }
     public String getScope() { return scope; }
     public void setScope(String scope) { this.scope = scope; }
     public String getExclusions() { return exclusions; }

@@ -18,6 +18,10 @@ spring:
   mail:
     host: localhost
     port: 1025
+  servlet:
+    multipart:
+      max-file-size: ${ARQLY_MAX_FILE_SIZE:100MB}
+      max-request-size: ${ARQLY_MAX_REQUEST_SIZE:500MB}
 
 server:
   port: ${SERVER_PORT:8080}
@@ -31,6 +35,8 @@ arqly:
   bootstrap:
     platform-email: ${ARQLY_PLATFORM_EMAIL:admin@arqly.local}
     platform-password: ${ARQLY_PLATFORM_PASSWORD:Admin@12345}
+  storage:
+    local-root: ${ARQLY_STORAGE_LOCAL_ROOT:./storage}
 
 logging:
   level:

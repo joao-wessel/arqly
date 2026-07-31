@@ -28,8 +28,8 @@ public class Project extends BaseEntity {
     @JoinColumn(name = "client_id", nullable = false)
     private Client client;
 
-    @OneToOne(optional = false, fetch = FetchType.LAZY)
-    @JoinColumn(name = "proposal_id", nullable = false)
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "proposal_id")
     private Proposal proposal;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -45,11 +45,21 @@ public class Project extends BaseEntity {
     @Column(columnDefinition = "text")
     private String internalNotes;
     private String responsibleArchitect;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "responsible_user_id")
+    private TenantUser responsibleUser;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "project_manager_id")
+    private TenantUser projectManager;
+    private String legacyResponsibleName;
     @Column(nullable = false, precision = 15, scale = 2)
     private BigDecimal contractedValue = BigDecimal.ZERO;
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ProjectStatus status = ProjectStatus.PLANNING;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private OriginType originType = OriginType.PROPOSAL;
     private LocalDate startDate;
     private LocalDate expectedEndDate;
     private LocalDate completedAt;
@@ -87,10 +97,18 @@ public class Project extends BaseEntity {
     public void setInternalNotes(String internalNotes) { this.internalNotes = internalNotes; }
     public String getResponsibleArchitect() { return responsibleArchitect; }
     public void setResponsibleArchitect(String responsibleArchitect) { this.responsibleArchitect = responsibleArchitect; }
+    public TenantUser getResponsibleUser() { return responsibleUser; }
+    public void setResponsibleUser(TenantUser responsibleUser) { this.responsibleUser = responsibleUser; }
+    public TenantUser getProjectManager() { return projectManager; }
+    public void setProjectManager(TenantUser projectManager) { this.projectManager = projectManager; }
+    public String getLegacyResponsibleName() { return legacyResponsibleName; }
+    public void setLegacyResponsibleName(String legacyResponsibleName) { this.legacyResponsibleName = legacyResponsibleName; }
     public BigDecimal getContractedValue() { return contractedValue; }
     public void setContractedValue(BigDecimal contractedValue) { this.contractedValue = contractedValue; }
     public ProjectStatus getStatus() { return status; }
     public void setStatus(ProjectStatus status) { this.status = status; }
+    public OriginType getOriginType() { return originType; }
+    public void setOriginType(OriginType originType) { this.originType = originType; }
     public LocalDate getStartDate() { return startDate; }
     public void setStartDate(LocalDate startDate) { this.startDate = startDate; }
     public LocalDate getExpectedEndDate() { return expectedEndDate; }

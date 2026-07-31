@@ -22,6 +22,28 @@
   --shadow-soft-color: rgba(15, 23, 42, 0.08);
 }
 
+.markdown-document {
+  color: var(--color-heading);
+  font-size: 0.95rem;
+  line-height: 1.75;
+}
+
+.markdown-document h1,
+.markdown-document h2,
+.markdown-document h3 {
+  color: var(--color-heading);
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.markdown-document h1 { margin: 0 0 1.5rem; font-size: 1.875rem; }
+.markdown-document h2 { margin: 1.75rem 0 0.75rem; font-size: 1.35rem; }
+.markdown-document h3 { margin: 1.5rem 0 0.625rem; font-size: 1.1rem; }
+.markdown-document p { margin: 0.45rem 0; }
+.markdown-document ul { margin: 0.75rem 0; padding-left: 1.4rem; list-style: disc; }
+.markdown-document li { margin: 0.25rem 0; }
+.markdown-document a { color: rgb(var(--arqly-700)); font-weight: 700; text-decoration: underline; }
+
 :root[data-palette="terracotta"] {
   --arqly-50: 255 247 242;
   --arqly-100: 252 232 218;
@@ -76,7 +98,47 @@ body {
 
 .field {
   @apply w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-arqly-500 focus:ring-4 focus:ring-arqly-100;
+}
+
+input.field,
+button.field,
+select.field,
+[role="button"].field {
   min-height: 3rem;
+}
+
+.file-filter-select .field {
+  height: 3rem;
+  min-height: 3rem;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.field[type="date"] {
+  color: var(--color-heading);
+  color-scheme: light;
+  cursor: pointer;
+}
+
+.field[type="date"]::-webkit-datetime-edit,
+.field[type="date"]::-webkit-datetime-edit-fields-wrapper {
+  color: var(--color-heading);
+}
+
+.field[type="date"]::-webkit-calendar-picker-indicator {
+  width: 1.15rem;
+  height: 1.15rem;
+  margin-right: -0.25rem;
+  padding: 0.35rem;
+  border-radius: 0.7rem;
+  background-color: rgb(var(--arqly-50));
+  cursor: pointer;
+  transition: background-color 150ms ease, box-shadow 150ms ease;
+}
+
+.field[type="date"]::-webkit-calendar-picker-indicator:hover {
+  background-color: rgb(var(--arqly-100));
+  box-shadow: 0 0 0 0.35rem rgb(var(--arqly-100) / 0.7);
 }
 
 .btn-primary {
@@ -91,6 +153,7 @@ body {
 
 .modal-overlay {
   background: rgba(0, 0, 0, 0.48);
+  margin-top: 0 !important;
 }
 
 .modal-panel {
@@ -198,6 +261,15 @@ body {
   background-color: #151515;
   border-color: var(--color-border);
   color: var(--color-heading);
+}
+
+:root.dark .field[type="date"] {
+  color-scheme: dark;
+}
+
+:root.dark .field[type="date"]::-webkit-calendar-picker-indicator {
+  background-color: rgb(var(--arqly-500) / 0.18);
+  filter: invert(1) brightness(1.2);
 }
 
 :root.dark .field::placeholder {

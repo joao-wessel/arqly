@@ -13,10 +13,12 @@ import com.arqly.backend.dto.ProposalDtos.ProposalResponse;
 import com.arqly.backend.dto.ProposalDtos.ProposalStatsResponse;
 import com.arqly.backend.dto.ProposalDtos.ProposalSummaryResponse;
 import com.arqly.backend.entity.BillingUnit;
+import com.arqly.backend.entity.Briefing;
 import com.arqly.backend.entity.Client;
 import com.arqly.backend.entity.ClientPersonType;
 import com.arqly.backend.entity.ClientPortalAccess;
 import com.arqly.backend.entity.ClientStatus;
+import com.arqly.backend.entity.OriginType;
 import com.arqly.backend.entity.Project;
 import com.arqly.backend.entity.ProjectService;
 import com.arqly.backend.entity.Proposal;
@@ -28,6 +30,7 @@ import com.arqly.backend.exception.NotFoundException;
 import com.arqly.backend.mapper.ProposalMapper;
 import com.arqly.backend.repository.ClientPortalAccessRepository;
 import com.arqly.backend.repository.ClientRepository;
+import com.arqly.backend.repository.BriefingRepository;
 import com.arqly.backend.repository.ProjectRepository;
 import com.arqly.backend.repository.ProjectServiceRepository;
 import com.arqly.backend.repository.ProposalItemRepository;
@@ -59,6 +62,7 @@ public class ProposalService {
     private final ProjectServiceRepository projectServiceRepository;
     private final ProposalItemRepository proposalItemRepository;
     private final ClientRepository clientRepository;
+    private final BriefingRepository briefingRepository;
     private final ClientPortalAccessRepository portalRepository;
     private final ServiceRepository serviceRepository;
     private final TenantRepository tenantRepository;
@@ -69,7 +73,7 @@ public class ProposalService {
 
     public ProposalService(ProposalRepository proposalRepository, ProjectRepository projectRepository,
                            ProjectServiceRepository projectServiceRepository, ProposalItemRepository proposalItemRepository,
-                           ClientRepository clientRepository, ClientPortalAccessRepository portalRepository,
+                           ClientRepository clientRepository, BriefingRepository briefingRepository, ClientPortalAccessRepository portalRepository,
                            ServiceRepository serviceRepository, TenantRepository tenantRepository, ProposalMapper mapper,
                            ProposalPdfService pdfService, EmailService emailService, SettingsService settingsService) {
         this.proposalRepository = proposalRepository;
@@ -77,6 +81,7 @@ public class ProposalService {
         this.projectServiceRepository = projectServiceRepository;
         this.proposalItemRepository = proposalItemRepository;
         this.clientRepository = clientRepository;
+        this.briefingRepository = briefingRepository;
         this.portalRepository = portalRepository;
         this.serviceRepository = serviceRepository;
         this.tenantRepository = tenantRepository;
@@ -105,6 +110,7 @@ public class ProposalService {
         var proposal = mapper.toEntity(request);
         proposal.setTenant(tenant);
         proposal.setClient(findTenantClient(tenantId, request.clientId()));
+        fillOrigin(tenantId, proposal, request.briefingId());
         proposal.setNumber(nextNumber(tenantId));
         proposal.setCreatedBy(username);
         proposal.setUpdatedBy(username);
@@ -121,6 +127,7 @@ public class ProposalService {
         ensureEditable(proposal);
         mapper.update(request, proposal);
         proposal.setClient(findTenantClient(tenantId, request.clientId()));
+        fillOrigin(tenantId, proposal, request.briefingId());
         proposal.setUpdatedBy(username);
         replaceItems(tenantId, proposal, request.items());
         replacePaymentConditions(proposal, request.paymentConditions());
@@ -135,6 +142,7 @@ public class ProposalService {
         var copy = new Proposal();
         copy.setTenant(source.getTenant());
         copy.setClient(source.getClient());
+        copy.setOriginType(OriginType.MANUAL);
         copy.setNumber(nextNumber(tenantId));
         copy.setTitle(source.getTitle() + " (cópia)");
         copy.setDescription(source.getDescription());
@@ -255,7 +263,9 @@ public class ProposalService {
                 proposalRepository.countByTenantIdAndStatusAndDeletedFalse(tenantId, ProposalStatus.ACCEPTED),
                 proposalRepository.countByTenantIdAndStatusAndDeletedFalse(tenantId, ProposalStatus.REJECTED),
                 proposalRepository.countByTenantIdAndStatusAndDeletedFalse(tenantId, ProposalStatus.EXPIRED),
-                pending
+                pending,
+                proposalRepository.countByTenantIdAndOriginTypeAndDeletedFalse(tenantId, OriginType.MANUAL),
+                proposalRepository.countByTenantIdAndOriginTypeAndDeletedFalse(tenantId, OriginType.BRIEFING)
         );
     }
 
@@ -355,6 +365,26 @@ public class ProposalService {
             item.setTotal(lineTotal(item));
             proposal.getItems().add(item);
         }
+    }
+
+    private void fillOrigin(UUID tenantId, Proposal proposal, UUID briefingId) {
+        if (briefingId == null) {
+            proposal.setBriefing(null);
+            proposal.setOriginType(OriginType.MANUAL);
+            return;
+        }
+        Briefing briefing = briefingRepository.findByIdAndTenantIdAndDeletedFalse(briefingId, tenantId)
+                .orElseThrow(() -> new NotFoundException("Briefing não encontrado."));
+        if (!briefing.getClient().getId().equals(proposal.getClient().getId())) {
+            throw new BusinessException("O briefing selecionado pertence a outro cliente.");
+        }
+        proposalRepository.findByBriefingIdAndTenantIdAndDeletedFalse(briefingId, tenantId)
+                .filter(existing -> !existing.getId().equals(proposal.getId()))
+                .ifPresent(existing -> {
+                    throw new BusinessException("Este briefing já possui uma proposta vinculada.");
+                });
+        proposal.setBriefing(briefing);
+        proposal.setOriginType(OriginType.BRIEFING);
     }
 
     private void replacePaymentConditions(Proposal proposal, List<ProposalPaymentConditionRequest> conditions) {
@@ -508,13 +538,20 @@ public class ProposalService {
 
     private ProposalSummaryResponse toSummary(Proposal proposal) {
         return new ProposalSummaryResponse(proposal.getId(), proposal.getNumber(), proposal.getClient().getId(),
-                displayName(proposal.getClient()), proposal.getTitle(), proposal.getTotal(), proposal.getStatus(),
+                displayName(proposal.getClient()),
+                proposal.getBriefing() == null ? null : proposal.getBriefing().getId(),
+                proposal.getBriefing() == null ? null : proposal.getBriefing().getTitle(),
+                proposal.getOriginType(),
+                proposal.getTitle(), proposal.getTotal(), proposal.getStatus(),
                 proposal.getValidUntil(), proposal.getCreatedBy(), proposal.isProjectCreated(), proposal.getCreatedAt(), proposal.getUpdatedAt());
     }
 
-    private ProposalResponse toResponse(Proposal proposal) {
+    public ProposalResponse toResponse(Proposal proposal) {
         var client = proposal.getClient();
         return new ProposalResponse(proposal.getId(), proposal.getNumber(), client.getId(), displayName(client), client.getEmail(),
+                proposal.getBriefing() == null ? null : proposal.getBriefing().getId(),
+                proposal.getBriefing() == null ? null : proposal.getBriefing().getTitle(),
+                proposal.getOriginType(),
                 proposal.getTitle(), proposal.getDescription(), proposal.getValidUntil(), proposal.getSubtotal(),
                 proposal.getDiscount(), proposal.getAddition(), proposal.getTotal(), proposal.getStatus(), proposal.getScope(),
                 proposal.getExclusions(), proposal.getInternalNotes(), proposal.getClientNotes(), proposal.getCreatedBy(),

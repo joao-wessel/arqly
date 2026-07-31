@@ -7,8 +7,9 @@ import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ProjectStageTemplateRepository extends JpaRepository<ProjectStageTemplate, UUID> {
-    List<ProjectStageTemplate> findAllByProjectTemplateIdAndTenantIdAndDeletedFalseOrderByOrderAsc(UUID projectTemplateId, UUID tenantId);
-    List<ProjectStageTemplate> findAllByProjectTemplateIdAndTenantIdAndActiveTrueAndDeletedFalseOrderByOrderAsc(UUID projectTemplateId, UUID tenantId);
+    List<ProjectStageTemplate> findAllByProjectPhaseTemplateIdAndTenantIdAndDeletedFalseOrderByOrderAsc(UUID projectPhaseTemplateId, UUID tenantId);
+    List<ProjectStageTemplate> findAllByProjectPhaseTemplateIdAndTenantIdAndActiveTrueAndDeletedFalseOrderByOrderAsc(UUID projectPhaseTemplateId, UUID tenantId);
     Optional<ProjectStageTemplate> findByIdAndTenantIdAndDeletedFalse(UUID id, UUID tenantId);
-    long countByProjectTemplateIdAndTenantIdAndDeletedFalse(UUID projectTemplateId, UUID tenantId);
+    long countByProjectPhaseTemplateProjectTemplateIdAndTenantIdAndDeletedFalse(UUID projectTemplateId, UUID tenantId);
+    long countByProjectPhaseTemplateIdAndTenantIdAndDeletedFalse(UUID projectPhaseTemplateId, UUID tenantId);
 }

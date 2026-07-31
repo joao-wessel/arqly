@@ -28,11 +28,14 @@ services:
       ARQLY_PLATFORM_PASSWORD: Admin@12345
       ARQLY_PLATFORM_JWT_SECRET: change-me-platform-secret-change-me-platform-secret
       ARQLY_TENANT_JWT_SECRET: change-me-tenant-secret-change-me-tenant-secret
+      ARQLY_STORAGE_LOCAL_ROOT: /app/storage
     ports:
       - "8080:8080"
     depends_on:
       postgres:
         condition: service_healthy
+    volumes:
+      - file_storage:/app/storage
 
   frontend:
     build:
@@ -45,3 +48,4 @@ services:
 
 volumes:
   postgres_data:
+  file_storage:

@@ -1,9 +1,10 @@
-import { DatePipe, DecimalPipe } from '@angular/common';
+﻿import { DatePipe, DecimalPipe } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
 import { ApiResponse } from '../../core/auth/auth.models';
+import { ArqlyCurrencyInputComponent } from '../../shared/components/arqly-currency-input.component';
 import { ArqlySelectComponent } from '../../shared/components/arqly-select.component';
 import { ToastService } from '../../shared/components/toast/toast.service';
 
@@ -57,7 +58,7 @@ interface Stats {
 @Component({
   selector: 'app-service-catalog',
   standalone: true,
-  imports: [ReactiveFormsModule, DatePipe, DecimalPipe, LucideAngularModule, ArqlySelectComponent],
+  imports: [ReactiveFormsModule, DatePipe, DecimalPipe, LucideAngularModule, ArqlySelectComponent, ArqlyCurrencyInputComponent],
   template: `
     <section class="space-y-5">
       <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
@@ -115,8 +116,8 @@ interface Stats {
             <app-arqly-select formControlName="categoryId" placeholder="Categoria" [options]="categoryFilterOptions()" />
             <app-arqly-select formControlName="active" placeholder="Status" [options]="statusFilterOptions" />
             <app-arqly-select formControlName="featured" placeholder="Destaque" [options]="featuredFilterOptions" />
-            <input class="field" type="number" placeholder="Valor mín." formControlName="minValue">
-            <input class="field" type="number" placeholder="Valor máx." formControlName="maxValue">
+            <app-arqly-currency-input placeholder="Valor mín." formControlName="minValue" />
+            <app-arqly-currency-input placeholder="Valor máx." formControlName="maxValue" />
             <button class="btn-secondary md:col-span-7" type="submit"><lucide-icon name="Search" size="18"></lucide-icon>Pesquisar</button>
           </form>
 
@@ -148,7 +149,7 @@ interface Stats {
                         <span class="text-slate-400">Sem categoria</span>
                       }
                     </td>
-                    <td class="px-6 py-4">{{ service.currency }} {{ service.baseValue || 0 | number:'1.2-2' }}</td>
+                    <td class="px-6 py-4">R$ {{ service.baseValue || 0 | number:'1.2-2' }}</td>
                     <td class="px-6 py-4">{{ unitLabel(service.billingUnit) }}</td>
                     <td class="px-6 py-4"><span class="rounded-full px-3 py-1 text-xs font-bold" [class.bg-arqly-50]="service.active" [class.text-arqly-700]="service.active" [class.bg-slate-100]="!service.active" [class.text-slate-500]="!service.active">{{ service.active ? 'Ativo' : 'Inativo' }}</span></td>
                     <td class="px-6 py-4">{{ service.featured ? 'Sim' : 'Não' }}</td>
@@ -282,7 +283,7 @@ interface Stats {
               <div class="mt-4 grid gap-4 md:grid-cols-2">
                 <label class="space-y-1">
                   <span class="text-xs font-bold text-slate-500">Valor base</span>
-                  <input class="field" type="number" min="0" step="0.01" placeholder="0,00" formControlName="baseValue">
+                  <app-arqly-currency-input formControlName="baseValue" />
                 </label>
                 <label class="space-y-1">
                   <span class="text-xs font-bold text-slate-500">Unidade de cobrança <span class="text-red-500">*</span></span>

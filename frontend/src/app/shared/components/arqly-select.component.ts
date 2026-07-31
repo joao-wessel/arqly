@@ -69,7 +69,8 @@ export interface ArqlySelectOption {
         </div>
       }
     </div>
-  `
+  `,
+  styles: [':host { display: block; width: 100%; }']
 })
 export class ArqlySelectComponent implements ControlValueAccessor {
   @Input() options: ArqlySelectOption[] = [];

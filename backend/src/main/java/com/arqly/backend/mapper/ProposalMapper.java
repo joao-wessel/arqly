@@ -10,6 +10,8 @@ import org.mapstruct.MappingTarget;
 public interface ProposalMapper {
     @Mapping(target = "tenant", ignore = true)
     @Mapping(target = "client", ignore = true)
+    @Mapping(target = "briefing", ignore = true)
+    @Mapping(target = "originType", ignore = true)
     @Mapping(target = "number", ignore = true)
     @Mapping(target = "status", ignore = true)
     @Mapping(target = "subtotal", ignore = true)
@@ -20,6 +22,8 @@ public interface ProposalMapper {
 
     @Mapping(target = "tenant", ignore = true)
     @Mapping(target = "client", ignore = true)
+    @Mapping(target = "briefing", ignore = true)
+    @Mapping(target = "originType", ignore = true)
     @Mapping(target = "number", ignore = true)
     @Mapping(target = "status", ignore = true)
     @Mapping(target = "subtotal", ignore = true)

@@ -1,6 +1,8 @@
 package com.arqly.backend.dto;
 
 import com.arqly.backend.entity.BillingUnit;
+import com.arqly.backend.entity.OriginType;
+import com.arqly.backend.entity.ProgressCalculationMode;
 import com.arqly.backend.entity.ProjectStageStatus;
 import com.arqly.backend.entity.ProjectStatus;
 import jakarta.validation.Valid;
@@ -8,6 +10,7 @@ import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -22,6 +25,21 @@ public final class ProjectDtos {
             UUID templateId,
             LocalDate startDate,
             LocalDate expectedEndDate,
+            UUID responsibleUserId,
+            UUID projectManagerId,
+            String responsibleArchitect,
+            String internalNotes
+    ) {}
+
+    public record CreateProjectManualRequest(
+            @NotBlank String name,
+            @NotNull UUID clientId,
+            UUID templateId,
+            String description,
+            LocalDate startDate,
+            LocalDate expectedEndDate,
+            UUID responsibleUserId,
+            UUID projectManagerId,
             String responsibleArchitect,
             String internalNotes
     ) {}
@@ -34,6 +52,8 @@ public final class ProjectDtos {
             LocalDate startDate,
             LocalDate expectedEndDate,
             LocalDate completedAt,
+            UUID responsibleUserId,
+            UUID projectManagerId,
             String responsibleArchitect,
             String internalNotes
     ) {}
@@ -46,8 +66,13 @@ public final class ProjectDtos {
             String clientName,
             UUID proposalId,
             String proposalNumber,
+            OriginType originType,
             UUID templateId,
             String templateName,
+            UUID responsibleUserId,
+            String responsibleName,
+            UUID projectManagerId,
+            String projectManagerName,
             String responsibleArchitect,
             ProjectStatus status,
             LocalDate expectedEndDate,
@@ -66,8 +91,13 @@ public final class ProjectDtos {
             String clientName,
             UUID proposalId,
             String proposalNumber,
+            OriginType originType,
             UUID templateId,
             String templateName,
+            UUID responsibleUserId,
+            String responsibleName,
+            UUID projectManagerId,
+            String projectManagerName,
             String responsibleArchitect,
             ProjectStatus status,
             LocalDate startDate,
@@ -79,7 +109,7 @@ public final class ProjectDtos {
             String createdBy,
             String updatedBy,
             List<ProjectServiceResponse> services,
-            List<ProjectStageResponse> stages,
+            List<ProjectPhaseResponse> phases,
             Instant createdAt,
             Instant updatedAt
     ) {}
@@ -101,7 +131,17 @@ public final class ProjectDtos {
             long createdThisMonth,
             long delayedStages,
             long completedStages,
-            long activeStages
+            long activeStages,
+            List<ResponsibleWorkloadResponse> projectsByResponsible,
+            List<ResponsibleWorkloadResponse> stagesByResponsible,
+            long manualProjects,
+            long proposalProjects
+    ) {}
+
+    public record ResponsibleWorkloadResponse(
+            UUID responsibleUserId,
+            String responsibleName,
+            long quantity
     ) {}
 
     public record ProjectTemplateRequest(
@@ -116,37 +156,84 @@ public final class ProjectDtos {
             boolean completed
     ) {}
 
-    public record StageTemplateRequest(
+    public record PhaseTemplateRequest(
             @NotBlank String name,
             String description,
             int order,
             String color,
             String icon,
-            @DecimalMin("0.00") @DecimalMax("100.00") BigDecimal weightPercentage,
-            boolean active,
-            @Valid List<StageChecklistRequest> checklist
+            boolean active
     ) {}
 
-    public record StageTemplateResponse(
+    public record PhaseTemplateResponse(
             UUID id,
             String name,
             String description,
             int order,
             String color,
             String icon,
+            boolean active,
+            long stageCount,
+            List<StageTemplateResponse> stages,
+            Instant createdAt,
+            Instant updatedAt
+    ) {}
+
+    public record StageTemplateRequest(
+            @NotBlank String name,
+            String description,
+            int order,
+            @DecimalMin("0.00") @DecimalMax("100.00") BigDecimal weightPercentage,
+            ProgressCalculationMode progressCalculationMode,
+            boolean active,
+            @Valid List<StageChecklistRequest> checklist
+    ) {}
+
+    public record StageTemplateResponse(
+            UUID id,
+            UUID phaseTemplateId,
+            String name,
+            String description,
+            int order,
             BigDecimal weightPercentage,
+            ProgressCalculationMode progressCalculationMode,
             boolean active,
             List<StageChecklistResponse> checklist,
             Instant createdAt,
             Instant updatedAt
     ) {}
 
-    public record ProjectStageRequest(
+    public record ProjectPhaseRequest(
             @NotBlank String name,
             String description,
             int order,
             String color,
             String icon,
+            ProjectStageStatus status,
+            String notes
+    ) {}
+
+    public record ProjectPhaseResponse(
+            UUID id,
+            UUID phaseTemplateId,
+            String name,
+            String description,
+            int order,
+            String color,
+            String icon,
+            ProjectStageStatus status,
+            BigDecimal completionPercentage,
+            String notes,
+            List<ProjectStageResponse> stages,
+            Instant createdAt,
+            Instant updatedAt
+    ) {}
+
+    public record ProjectStageRequest(
+            @NotBlank String name,
+            UUID projectPhaseId,
+            String description,
+            int order,
             ProjectStageStatus status,
             LocalDate plannedStart,
             LocalDate plannedEnd,
@@ -154,6 +241,8 @@ public final class ProjectDtos {
             LocalDate actualEnd,
             @DecimalMin("0.00") @DecimalMax("100.00") BigDecimal completionPercentage,
             @DecimalMin("0.00") @DecimalMax("100.00") BigDecimal weightPercentage,
+            ProgressCalculationMode progressCalculationMode,
+            UUID responsibleUserId,
             String responsible,
             String notes,
             UUID dependsOnStageId,
@@ -162,13 +251,12 @@ public final class ProjectDtos {
 
     public record ProjectStageResponse(
             UUID id,
+            UUID projectPhaseId,
             UUID templateId,
             UUID dependsOnStageId,
             String name,
             String description,
             int order,
-            String color,
-            String icon,
             ProjectStageStatus status,
             LocalDate plannedStart,
             LocalDate plannedEnd,
@@ -176,8 +264,13 @@ public final class ProjectDtos {
             LocalDate actualEnd,
             BigDecimal completionPercentage,
             BigDecimal weightPercentage,
+            ProgressCalculationMode progressCalculationMode,
+            UUID responsibleUserId,
+            String responsibleName,
             String responsible,
             String notes,
+            long fileCount,
+            long timelineEventCount,
             List<StageChecklistResponse> checklist,
             Instant createdAt,
             Instant updatedAt
@@ -193,7 +286,8 @@ public final class ProjectDtos {
 
     public record ReorderItemRequest(
             UUID id,
-            int order
+            int order,
+            UUID projectPhaseId
     ) {}
 
     public record ReorderRequest(
@@ -205,8 +299,10 @@ public final class ProjectDtos {
             String name,
             String description,
             boolean active,
+            long phaseCount,
             long stageCount,
             long projectsUsing,
+            List<PhaseTemplateResponse> phases,
             Instant createdAt,
             Instant updatedAt
     ) {}

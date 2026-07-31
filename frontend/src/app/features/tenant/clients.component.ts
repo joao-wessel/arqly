@@ -4,6 +4,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
 import { ApiResponse } from '../../core/auth/auth.models';
+import { ArqlyDatePickerComponent } from '../../shared/components/arqly-date-picker.component';
 import { ArqlySelectComponent } from '../../shared/components/arqly-select.component';
 import { ToastService } from '../../shared/components/toast/toast.service';
 
@@ -66,7 +67,7 @@ interface Page<T> {
 @Component({
   selector: 'app-clients',
   standalone: true,
-  imports: [ReactiveFormsModule, DatePipe, LucideAngularModule, ArqlySelectComponent],
+  imports: [ReactiveFormsModule, DatePipe, LucideAngularModule, ArqlySelectComponent, ArqlyDatePickerComponent],
   template: `
     <section class="space-y-5">
       <div class="card overflow-hidden">
@@ -236,10 +237,10 @@ interface Page<T> {
                       <span class="text-xs font-bold text-slate-500">RG</span>
                       <input class="field" placeholder="00.000.000-0" inputmode="numeric" maxlength="12" formControlName="rg" (input)="maskRg($event)">
                     </label>
-                    <label class="space-y-1">
+                    <div class="space-y-1">
                       <span class="text-xs font-bold text-slate-500">Data de nascimento</span>
-                      <input class="field" type="date" formControlName="birthDate">
-                    </label>
+                      <app-arqly-date-picker formControlName="birthDate" placeholder="Selecione" />
+                    </div>
                   } @else {
                     <label class="space-y-1">
                       <span class="text-xs font-bold text-slate-500">Razão social <span class="text-red-500">*</span></span>

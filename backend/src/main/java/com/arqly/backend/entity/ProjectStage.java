@@ -21,8 +21,8 @@ public class ProjectStage extends BaseEntity {
     private Tenant tenant;
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
-    @JoinColumn(name = "project_id", nullable = false)
-    private Project project;
+    @JoinColumn(name = "project_phase_id", nullable = false)
+    private ProjectPhase projectPhase;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "stage_template_id")
@@ -51,9 +51,16 @@ public class ProjectStage extends BaseEntity {
     private BigDecimal completionPercentage = BigDecimal.ZERO;
     @Column(nullable = false, precision = 5, scale = 2)
     private BigDecimal weightPercentage = BigDecimal.ZERO;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private ProgressCalculationMode progressCalculationMode = ProgressCalculationMode.MANUAL;
     @Column(columnDefinition = "text")
     private String notes;
     private String responsible;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "responsible_user_id")
+    private TenantUser responsibleUser;
+    private String legacyResponsibleName;
     private String createdBy;
     private String updatedBy;
     @Column(nullable = false)
@@ -67,8 +74,8 @@ public class ProjectStage extends BaseEntity {
 
     public Tenant getTenant() { return tenant; }
     public void setTenant(Tenant tenant) { this.tenant = tenant; }
-    public Project getProject() { return project; }
-    public void setProject(Project project) { this.project = project; }
+    public ProjectPhase getProjectPhase() { return projectPhase; }
+    public void setProjectPhase(ProjectPhase projectPhase) { this.projectPhase = projectPhase; }
     public ProjectStageTemplate getTemplate() { return template; }
     public void setTemplate(ProjectStageTemplate template) { this.template = template; }
     public ProjectStage getDependsOnStage() { return dependsOnStage; }
@@ -97,10 +104,16 @@ public class ProjectStage extends BaseEntity {
     public void setCompletionPercentage(BigDecimal completionPercentage) { this.completionPercentage = completionPercentage; }
     public BigDecimal getWeightPercentage() { return weightPercentage; }
     public void setWeightPercentage(BigDecimal weightPercentage) { this.weightPercentage = weightPercentage; }
+    public ProgressCalculationMode getProgressCalculationMode() { return progressCalculationMode; }
+    public void setProgressCalculationMode(ProgressCalculationMode progressCalculationMode) { this.progressCalculationMode = progressCalculationMode; }
     public String getNotes() { return notes; }
     public void setNotes(String notes) { this.notes = notes; }
     public String getResponsible() { return responsible; }
     public void setResponsible(String responsible) { this.responsible = responsible; }
+    public TenantUser getResponsibleUser() { return responsibleUser; }
+    public void setResponsibleUser(TenantUser responsibleUser) { this.responsibleUser = responsibleUser; }
+    public String getLegacyResponsibleName() { return legacyResponsibleName; }
+    public void setLegacyResponsibleName(String legacyResponsibleName) { this.legacyResponsibleName = legacyResponsibleName; }
     public String getCreatedBy() { return createdBy; }
     public void setCreatedBy(String createdBy) { this.createdBy = createdBy; }
     public String getUpdatedBy() { return updatedBy; }
