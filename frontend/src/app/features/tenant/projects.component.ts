@@ -66,6 +66,33 @@ interface ProjectDetail {
   startDate?: string | null; expectedEndDate?: string | null; completedAt?: string | null; contractedValue: number;
   progressPercentage: number; internalNotes?: string | null; services: any[]; phases: ProjectPhase[];
 }
+
+const PHASE_ICON_OPTIONS = [
+  { label: 'Fases', value: 'Layers3' },
+  { label: 'Checklist', value: 'ClipboardList' },
+  { label: 'Projeto', value: 'DraftingCompass' },
+  { label: 'Edificação', value: 'Building2' },
+  { label: 'Aprovação', value: 'FileCheck2' },
+  { label: 'Execução', value: 'Hammer' },
+  { label: 'Entrega', value: 'Flag' }
+];
+
+function normalizedPhaseIcon(icon?: string | null) {
+  const aliases: Record<string, string> = {
+    'layers-3': 'Layers3',
+    'clipboard-list': 'ClipboardList',
+    'pencil-ruler': 'DraftingCompass',
+    'drafting-compass': 'DraftingCompass',
+    'building-2': 'Building2',
+    'file-check-2': 'FileCheck2',
+    'stamp': 'FileCheck2',
+    'package-check': 'Flag',
+    'hammer': 'Hammer',
+    'flag': 'Flag'
+  };
+  const candidate = aliases[(icon || '').toLowerCase()] || icon;
+  return PHASE_ICON_OPTIONS.some((option) => option.value === candidate) ? candidate! : 'Layers3';
+}
 interface ProjectApproval {
   id: string; projectId: string; projectName: string; stageId?: string | null; stageName?: string | null;
   documentId?: string | null; documentTitle?: string | null; status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'EXPIRED' | 'CANCELLED';
@@ -208,7 +235,7 @@ interface ProjectApproval {
               <div class="rounded-3xl border border-slate-200 bg-white" draggable="true" (dragstart)="startPhaseTemplateDrag(phase)" (dragover)="allowDrop($event)" (drop)="dropPhaseTemplate(phase)">
                 <button class="flex w-full items-center justify-between gap-3 px-5 py-4 text-left" type="button" (click)="toggleTemplatePhase(phase.id)">
                   <span class="flex min-w-0 items-center gap-3">
-                    <span class="grid h-10 w-10 place-items-center rounded-2xl text-white" [style.background]="phase.color || '#0f766e'"><lucide-icon [name]="phase.icon || 'Layers3'" size="18"></lucide-icon></span>
+                    <span class="grid h-10 w-10 place-items-center rounded-2xl text-white" [style.background]="phase.color || '#0f766e'"><lucide-icon [name]="phaseIcon(phase.icon)" size="18"></lucide-icon></span>
                     <span class="min-w-0"><strong class="block truncate">{{ phase.order }}. {{ phase.name }}</strong><span class="text-xs font-bold text-slate-400">{{ phase.stageCount }} etapa(s)</span></span>
                   </span>
                   <span class="flex items-center gap-2">
@@ -456,7 +483,7 @@ export class ProjectsComponent implements OnInit {
     { label: 'Planejamento', value: 'PLANNING' }, { label: 'Em andamento', value: 'IN_PROGRESS' },
     { label: 'Pausado', value: 'ON_HOLD' }, { label: 'Concluído', value: 'COMPLETED' }, { label: 'Cancelado', value: 'CANCELLED' }
   ];
-  readonly iconOptions = ['Layers3', 'ClipboardList', 'DraftingCompass', 'Building2', 'FileCheck2', 'Hammer', 'Flag'].map((value) => ({ label: value, value }));
+  readonly iconOptions = PHASE_ICON_OPTIONS;
   readonly progressModeOptions = [
     { label: 'Manual', value: 'MANUAL' }, { label: 'Checklist', value: 'CHECKLIST' },
     { label: 'Datas', value: 'DATES' }, { label: 'Híbrido', value: 'HYBRID' }
@@ -541,10 +568,11 @@ export class ProjectsComponent implements OnInit {
 
   openPhaseModal(phase?: PhaseTemplate) {
     this.editingPhaseTemplate.set(phase || null);
-    this.phaseForm.reset({ name: phase?.name || '', description: phase?.description || '', order: phase?.order || this.templatePhases().length + 1, color: phase?.color || '#0f766e', icon: phase?.icon || 'Layers3', active: phase?.active ?? true });
+    this.phaseForm.reset({ name: phase?.name || '', description: phase?.description || '', order: phase?.order || this.templatePhases().length + 1, color: phase?.color || '#0f766e', icon: normalizedPhaseIcon(phase?.icon), active: phase?.active ?? true });
     this.phaseModalOpen.set(true);
   }
   closePhaseModal() { this.phaseModalOpen.set(false); }
+  phaseIcon(icon?: string | null) { return normalizedPhaseIcon(icon); }
   savePhaseTemplate() {
     if (this.phaseForm.invalid) { this.phaseForm.markAllAsTouched(); this.toast.validation('Informe o nome da fase.'); return; }
     const template = this.selectedTemplate(); if (!template) return;
@@ -813,7 +841,7 @@ export class ProjectsComponent implements OnInit {
                 <div class="rounded-3xl border border-slate-200 bg-white" draggable="true" (dragstart)="startPhaseDrag(phase)" (dragover)="allowDrop($event)" (drop)="dropPhase(phase)">
                   <button class="flex w-full items-center justify-between gap-3 px-5 py-4 text-left" type="button" (click)="togglePhase(phase.id)">
                     <span class="flex min-w-0 items-center gap-3">
-                      <span class="grid h-10 w-10 place-items-center rounded-2xl text-white" [style.background]="phase.color || '#0f766e'"><lucide-icon [name]="phase.icon || 'Layers3'" size="18"></lucide-icon></span>
+                      <span class="grid h-10 w-10 place-items-center rounded-2xl text-white" [style.background]="phase.color || '#0f766e'"><lucide-icon [name]="phaseIcon(phase.icon)" size="18"></lucide-icon></span>
                       <span class="min-w-0"><strong class="block truncate">{{ phase.order }}. {{ phase.name }}</strong><span class="text-xs font-bold text-slate-400">{{ phase.completionPercentage || 0 | number:'1.0-0' }}% · {{ phase.stages.length }} etapa(s)</span></span>
                     </span>
                     <span class="flex items-center gap-2">
@@ -999,7 +1027,7 @@ export class ProjectDetailComponent implements OnInit {
     readonly tabs = [{ label: 'Resumo', value: 'summary' }, { label: 'Etapas', value: 'stages' }, { label: 'Serviços', value: 'services' }, { label: 'Informações', value: 'info' }, { label: 'Documentos', value: 'documents' }, { label: 'Arquivos', value: 'files' }, { label: 'Aprovações', value: 'approvals' }, { label: 'Financeiro', value: 'finance', disabled: true }];
   readonly statusOptions = [{ label: 'Planejamento', value: 'PLANNING' }, { label: 'Em andamento', value: 'IN_PROGRESS' }, { label: 'Pausado', value: 'ON_HOLD' }, { label: 'Concluído', value: 'COMPLETED' }, { label: 'Cancelado', value: 'CANCELLED' }];
   readonly stageStatusOptions = [{ label: 'Não iniciada', value: 'NOT_STARTED' }, { label: 'Em andamento', value: 'IN_PROGRESS' }, { label: 'Aguardando cliente', value: 'WAITING_CLIENT' }, { label: 'Aguardando aprovação', value: 'WAITING_APPROVAL' }, { label: 'Pausada', value: 'ON_HOLD' }, { label: 'Concluída', value: 'COMPLETED' }, { label: 'Cancelada', value: 'CANCELLED' }];
-  readonly iconOptions = ['Layers3', 'ClipboardList', 'DraftingCompass', 'Building2', 'FileCheck2', 'Hammer', 'Flag'].map((value) => ({ label: value, value }));
+  readonly iconOptions = PHASE_ICON_OPTIONS;
   readonly progressModeOptions = [{ label: 'Manual', value: 'MANUAL' }, { label: 'Checklist', value: 'CHECKLIST' }, { label: 'Datas', value: 'DATES' }, { label: 'Híbrido', value: 'HYBRID' }];
   readonly form = this.fb.nonNullable.group({ name: ['', Validators.required], description: [''], status: ['PLANNING'], responsibleUserId: [''], projectManagerId: [''], responsibleArchitect: [''], expectedEndDate: [''], internalNotes: [''] });
   readonly phaseForm = this.fb.nonNullable.group({ name: ['', Validators.required], description: [''], order: [1], color: ['#0f766e'], icon: ['Layers3'], notes: [''] });
@@ -1020,8 +1048,9 @@ export class ProjectDetailComponent implements OnInit {
   loadApprovals() { this.http.get<ApiResponse<ProjectApproval[]>>(`http://localhost:8080/api/tenant/approvals/projects/${this.projectId()}`).subscribe((response) => this.approvals.set(response.data)); }
   save() { const p = this.project(); if (!p) return; const raw = this.form.getRawValue(); this.http.put<ApiResponse<ProjectDetail>>(`${this.baseUrl}/${p.id}`, { ...raw, responsibleUserId: raw.responsibleUserId || null, projectManagerId: raw.projectManagerId || null, templateId: p.templateId, startDate: p.startDate, completedAt: p.completedAt }).subscribe({ next: () => { this.toast.success('Projeto atualizado'); this.load(); }, error: () => this.toast.error('Não foi possível salvar o projeto') }); }
 
-  openPhaseModal(phase?: ProjectPhase) { this.editingPhase.set(phase || null); this.phaseForm.reset({ name: phase?.name || '', description: phase?.description || '', order: phase?.order || this.phases().length + 1, color: phase?.color || '#0f766e', icon: phase?.icon || 'Layers3', notes: phase?.notes || '' }); this.phaseModalOpen.set(true); }
+  openPhaseModal(phase?: ProjectPhase) { this.editingPhase.set(phase || null); this.phaseForm.reset({ name: phase?.name || '', description: phase?.description || '', order: phase?.order || this.phases().length + 1, color: phase?.color || '#0f766e', icon: normalizedPhaseIcon(phase?.icon), notes: phase?.notes || '' }); this.phaseModalOpen.set(true); }
   closePhaseModal() { this.phaseModalOpen.set(false); }
+  phaseIcon(icon?: string | null) { return normalizedPhaseIcon(icon); }
   savePhase() {
     if (this.phaseForm.invalid) { this.phaseForm.markAllAsTouched(); this.toast.validation('Informe o nome da fase.'); return; }
     const phase = this.editingPhase(); const payload = { ...this.phaseForm.getRawValue(), status: phase?.status || 'NOT_STARTED' };

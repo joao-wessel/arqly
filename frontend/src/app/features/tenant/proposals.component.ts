@@ -694,6 +694,10 @@ export class ProposalsComponent implements OnInit {
   ngOnInit() {
     this.loadOptions();
     this.proposalForm.controls.briefingId.valueChanges.subscribe((id) => this.applyBriefingDefaults(id));
+    this.itemForm.controls.serviceId.valueChanges.subscribe((id) => this.applyServiceDefaults(id));
+    this.paymentForm.controls.percentage.valueChanges.subscribe(() => this.updatePaymentValueFromPercentage());
+    this.proposalForm.controls.discount.valueChanges.subscribe(() => this.updatePaymentValueFromPercentage());
+    this.proposalForm.controls.addition.valueChanges.subscribe(() => this.updatePaymentValueFromPercentage());
     this.reload();
   }
 
@@ -818,6 +822,20 @@ export class ProposalsComponent implements OnInit {
     if (mode === 'MANUAL') this.proposalForm.patchValue({ briefingId: '' });
   }
 
+  applyServiceDefaults(id: string) {
+    if (!id || this.readOnly()) return;
+    const service = this.services().find((item) => item.id === id);
+    if (!service) return;
+    this.itemForm.controls.unitValue.setValue(Number(service.baseValue || 0), { emitEvent: false });
+  }
+
+  updatePaymentValueFromPercentage() {
+    if (this.readOnly()) return;
+    const percentage = Number(this.paymentForm.controls.percentage.value || 0);
+    if (percentage <= 0) return;
+    this.paymentForm.controls.value.setValue(this.roundCurrency(this.finalTotal() * percentage / 100), { emitEvent: false });
+  }
+
   addItem() {
     if (this.readOnly()) return;
     if (this.itemForm.invalid) {
@@ -842,12 +860,14 @@ export class ProposalsComponent implements OnInit {
       discount,
       total
     }]);
+    this.updatePaymentValueFromPercentage();
     this.itemForm.reset({ serviceId: '', quantity: 1, unitValue: 0, discount: 0, customDescription: '' });
   }
 
   removeItem(index: number) {
     if (this.readOnly()) return;
     this.items.update((items) => items.filter((_, current) => current !== index));
+    this.updatePaymentValueFromPercentage();
   }
 
   addPayment() {
@@ -858,7 +878,9 @@ export class ProposalsComponent implements OnInit {
     }
     const value = this.paymentForm.getRawValue();
     const percentage = Number(value.percentage || 0);
-    const amount = Number(value.value || 0) || (percentage > 0 ? this.finalTotal() * percentage / 100 : 0);
+    const amount = percentage > 0
+      ? this.roundCurrency(this.finalTotal() * percentage / 100)
+      : this.roundCurrency(Number(value.value || 0));
     this.payments.update((items) => [...items, {
       description: value.description,
       percentage: percentage || null,
@@ -1095,6 +1117,10 @@ export class ProposalsComponent implements OnInit {
 
   finalTotal() {
     return Math.max(this.subtotal() - Number(this.proposalForm.controls.discount.value || 0) + Number(this.proposalForm.controls.addition.value || 0), 0);
+  }
+
+  private roundCurrency(value: number) {
+    return Math.round((value + Number.EPSILON) * 100) / 100;
   }
 
   statusLabel(status: ProposalStatus) {

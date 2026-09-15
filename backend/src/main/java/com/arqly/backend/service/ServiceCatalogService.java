@@ -48,6 +48,7 @@ public class ServiceCatalogService {
         this.categoryMapper = categoryMapper;
     }
 
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public Page<ServiceSummaryResponse> listServices(UUID tenantId, String name, UUID categoryId, Boolean active,
                                                      BigDecimal minValue, BigDecimal maxValue, Boolean featured,
                                                      Pageable pageable) {
@@ -55,6 +56,7 @@ public class ServiceCatalogService {
                 .map(this::toSummary);
     }
 
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public ServiceResponse getService(UUID tenantId, UUID id) {
         return toResponse(findTenantService(tenantId, id));
     }

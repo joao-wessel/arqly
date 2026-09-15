@@ -8,7 +8,7 @@ import { ApiResponse } from '../../core/auth/auth.models';
 import { LogoComponent } from '../../shared/components/logo.component';
 import { ToastService } from '../../shared/components/toast/toast.service';
 
-type PortalView = 'dashboard' | 'projects' | 'documents' | 'files' | 'approvals' | 'profile';
+type PortalView = 'dashboard' | 'projects' | 'documents' | 'files' | 'approvals';
 type ProjectStatus = 'PLANNING' | 'IN_PROGRESS' | 'ON_HOLD' | 'COMPLETED' | 'CANCELLED';
 type StageStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'WAITING_CLIENT' | 'WAITING_APPROVAL' | 'ON_HOLD' | 'COMPLETED' | 'CANCELLED';
 type ApprovalStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'EXPIRED' | 'CANCELLED';
@@ -207,6 +207,12 @@ interface PortalProjectDetail extends PortalProjectSummary { description: string
                         <p class="mt-2 text-sm text-slate-500">Responsável: {{ project.responsibleName || 'Equipe' }}</p>
                         <div class="mt-5 h-2 rounded-full bg-slate-100"><div class="h-2 rounded-full bg-arqly-700" [style.width.%]="project.progressPercentage || 0"></div></div>
                       </button>
+                    } @empty {
+                      <div class="card col-span-full p-8 text-center">
+                        <span class="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-arqly-50 text-arqly-700"><lucide-icon name="Folder" size="22"></lucide-icon></span>
+                        <h2 class="mt-4 text-xl font-extrabold">Nenhum projeto disponível</h2>
+                        <p class="mt-2 text-sm text-slate-500">Quando um projeto for iniciado, o acompanhamento aparecerá aqui.</p>
+                      </div>
                     }
                   </section>
                 }
@@ -257,6 +263,27 @@ interface PortalProjectDetail extends PortalProjectSummary { description: string
 
               @if (view() === 'approvals') {
                 <section class="space-y-4">
+                  @if (proposals().length) {
+                    <div class="card overflow-hidden">
+                      <div class="border-b border-slate-200 p-5">
+                        <p class="text-xs font-extrabold uppercase tracking-[0.2em] text-arqly-700">Propostas</p>
+                        <h2 class="mt-1 text-xl font-extrabold">Propostas para análise</h2>
+                      </div>
+                      <div class="divide-y divide-slate-100">
+                        @for (proposal of proposals(); track proposal.id) {
+                          <article class="flex flex-col gap-4 p-5 md:flex-row md:items-center md:justify-between">
+                            <div>
+                              <span class="rounded-full px-3 py-1 text-xs font-bold" [class]="proposalClass(proposal.status)">{{ proposalLabel(proposal.status) }}</span>
+                              <h3 class="mt-3 text-lg font-extrabold">{{ proposal.title }}</h3>
+                              <p class="mt-1 text-sm text-slate-500">{{ proposal.number }} · {{ currency(proposal.total) }} @if (proposal.validUntil) { · válida até {{ proposal.validUntil | date:'dd/MM/yyyy' }} }</p>
+                            </div>
+                            <a class="btn-primary justify-center" [href]="proposalDecisionUrl(proposal.id)"><lucide-icon name="FileCheck2" size="18"></lucide-icon>{{ proposal.status === 'SENT' || proposal.status === 'VIEWED' ? 'Analisar proposta' : 'Ver proposta' }}</a>
+                          </article>
+                        }
+                      </div>
+                    </div>
+                  }
+
                   @for (approval of approvals(); track approval.id) {
                     <article class="card p-5">
                       <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
@@ -277,21 +304,10 @@ interface PortalProjectDetail extends PortalProjectSummary { description: string
                         }
                       </div>
                     </article>
-                  } @empty {
+                  }
+                  @if (!proposals().length && !approvals().length) {
                     <p class="card p-5 text-sm text-slate-500">Nenhuma aprovação pendente.</p>
                   }
-                </section>
-              }
-
-              @if (view() === 'profile') {
-                <section class="card max-w-2xl p-6">
-                  <p class="text-xs font-extrabold uppercase tracking-[0.22em] text-arqly-700">Perfil</p>
-                  <h2 class="mt-2 text-2xl font-extrabold">{{ data.client.displayName }}</h2>
-                  <div class="mt-5 grid gap-4">
-                    <label class="space-y-1"><span class="text-xs font-bold text-slate-500">E-mail</span><input class="field" [value]="data.client.email" disabled></label>
-                    <label class="space-y-1"><span class="text-xs font-bold text-slate-500">Telefone</span><input class="field" [(ngModel)]="profilePhone"></label>
-                    <p class="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">Alteração de senha e foto ficarão vinculadas à autenticação dedicada do cliente na próxima evolução do portal.</p>
-                  </div>
                 </section>
               }
             </div>
@@ -324,15 +340,13 @@ export class ClientPortalComponent implements OnInit {
   readonly files = signal<PortalFile[]>([]);
   readonly approvals = signal<PortalApproval[]>([]);
   approvalComment = '';
-  profilePhone = '';
 
   readonly menu: { label: string; value: PortalView; icon: string }[] = [
     { label: 'Dashboard', value: 'dashboard', icon: 'LayoutDashboard' },
     { label: 'Projetos', value: 'projects', icon: 'Folder' },
     { label: 'Documentos', value: 'documents', icon: 'FileText' },
     { label: 'Arquivos', value: 'files', icon: 'Archive' },
-    { label: 'Aprovações', value: 'approvals', icon: 'CheckCircle2' },
-    { label: 'Perfil', value: 'profile', icon: 'UserCog' }
+    { label: 'Aprovações', value: 'approvals', icon: 'CheckCircle2' }
   ];
 
   ngOnInit() {
@@ -344,7 +358,6 @@ export class ClientPortalComponent implements OnInit {
     this.http.get<ApiResponse<PortalDashboard>>(`${this.baseUrl()}/dashboard`).subscribe({
       next: (response) => {
         this.dashboard.set(response.data);
-        this.profilePhone = response.data.client.phone || '';
         this.loaded.set(true);
       },
       error: () => this.loaded.set(true)
@@ -388,12 +401,16 @@ export class ClientPortalComponent implements OnInit {
   fileDownloadUrl(id: string) { return `${this.baseUrl()}/files/${id}/download`; }
   filePreviewUrl(id: string) { return `${this.baseUrl()}/files/${id}/preview`; }
   documentPdfUrl(id: string) { return `${this.baseUrl()}/documents/${id}/pdf`; }
+  proposalDecisionUrl(id: string) { return `/portal/${this.token()}/proposals/${id}`; }
+  currency(value: number) { return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value || 0); }
   firstName(name: string) { return (name || 'Cliente').split(' ')[0]; }
   activityIcon(type: string) { if (type.includes('FILE')) return 'Archive'; if (type.includes('APPROVAL')) return 'CheckCircle2'; if (type.includes('DOCUMENT')) return 'FileText'; return 'Activity'; }
   categoryLabel(category: string) { return ({ CONTRACT: 'Contrato', PROPOSAL: 'Proposta', MEMORIAL: 'Memorial', DECLARATION: 'Declaração', RECEIPT: 'Recibo', REPORT: 'Relatório', CHECKLIST: 'Checklist', OTHER: 'Outro' } as Record<string, string>)[category] || category; }
   statusLabel(status: ProjectStatus) { return ({ PLANNING: 'Planejamento', IN_PROGRESS: 'Em andamento', ON_HOLD: 'Pausado', COMPLETED: 'Concluído', CANCELLED: 'Cancelado' } as Record<string, string>)[status] || status; }
   stageStatusLabel(status: StageStatus) { return ({ NOT_STARTED: 'Não iniciada', IN_PROGRESS: 'Em andamento', WAITING_CLIENT: 'Aguardando cliente', WAITING_APPROVAL: 'Aguardando aprovação', ON_HOLD: 'Pausada', COMPLETED: 'Concluída', CANCELLED: 'Cancelada' } as Record<string, string>)[status] || status; }
   approvalLabel(status: ApprovalStatus) { return ({ PENDING: 'Pendente', APPROVED: 'Aprovada', REJECTED: 'Ajustes solicitados', EXPIRED: 'Expirada', CANCELLED: 'Cancelada' } as Record<string, string>)[status] || status; }
+  proposalLabel(status: string) { return ({ SENT: 'Aguardando análise', VIEWED: 'Em análise', ACCEPTED: 'Aceita', REJECTED: 'Recusada', EXPIRED: 'Expirada', CANCELLED: 'Cancelada' } as Record<string, string>)[status] || status; }
   statusClass(status: ProjectStatus) { if (status === 'COMPLETED') return 'bg-arqly-50 text-arqly-700'; if (status === 'IN_PROGRESS') return 'bg-blue-50 text-blue-700'; if (status === 'ON_HOLD') return 'bg-amber-50 text-amber-700'; if (status === 'CANCELLED') return 'bg-red-50 text-red-700'; return 'bg-slate-100 text-slate-600'; }
   approvalClass(status: ApprovalStatus) { if (status === 'APPROVED') return 'bg-arqly-50 text-arqly-700'; if (status === 'REJECTED') return 'bg-red-50 text-red-700'; if (status === 'PENDING') return 'bg-amber-50 text-amber-700'; return 'bg-slate-100 text-slate-600'; }
+  proposalClass(status: string) { if (status === 'ACCEPTED') return 'bg-arqly-50 text-arqly-700'; if (status === 'SENT' || status === 'VIEWED') return 'bg-amber-50 text-amber-700'; if (status === 'REJECTED') return 'bg-red-50 text-red-700'; return 'bg-slate-100 text-slate-600'; }
 }

@@ -222,8 +222,14 @@ interface Page<T> {
                   <p class="mt-1 text-sm text-slate-500">Preencha somente os dados essenciais agora. O restante pode ser completado depois.</p>
                 </div>
                 <div class="grid gap-4 md:grid-cols-2">
-                  <app-arqly-select formControlName="personType" placeholder="Tipo de pessoa" [options]="personTypeOptions" />
-                  <app-arqly-select formControlName="status" placeholder="Status" [options]="statusOptions" />
+                  <label class="space-y-1">
+                    <span class="text-xs font-bold text-slate-500">Tipo de pessoa <span class="text-red-500">*</span></span>
+                    <app-arqly-select formControlName="personType" placeholder="Selecione o tipo" [options]="personTypeOptions" />
+                  </label>
+                  <label class="space-y-1">
+                    <span class="text-xs font-bold text-slate-500">Status <span class="text-red-500">*</span></span>
+                    <app-arqly-select formControlName="status" placeholder="Selecione o status" [options]="statusOptions" />
+                  </label>
                   @if (clientForm.controls.personType.value === 'NATURAL_PERSON') {
                     <label class="space-y-1">
                       <span class="text-xs font-bold text-slate-500">Nome completo <span class="text-red-500">*</span></span>
@@ -292,15 +298,15 @@ interface Page<T> {
               </div>
               <div class="grid gap-4 md:grid-cols-2">
                 <label class="space-y-1">
-                  <span class="text-xs font-bold text-slate-500">CEP</span>
+                  <span class="text-xs font-bold text-slate-500">CEP <span class="text-red-500">*</span></span>
                   <input class="field" placeholder="00000-000" inputmode="numeric" maxlength="9" formControlName="zipCode" (input)="onZipCodeInput($event)">
                 </label>
                 <label class="space-y-1">
-                  <span class="text-xs font-bold text-slate-500">Número</span>
+                  <span class="text-xs font-bold text-slate-500">Número <span class="text-red-500">*</span></span>
                   <input class="field" placeholder="Número" formControlName="number">
                 </label>
                 <label class="space-y-1 md:col-span-2">
-                  <span class="text-xs font-bold text-slate-500">Logradouro</span>
+                  <span class="text-xs font-bold text-slate-500">Logradouro <span class="text-red-500">*</span></span>
                   <input class="field" placeholder="Rua, avenida, travessa..." formControlName="street">
                 </label>
                 <label class="space-y-1">
@@ -308,15 +314,15 @@ interface Page<T> {
                   <input class="field" placeholder="Apartamento, sala, bloco..." formControlName="complement">
                 </label>
                 <label class="space-y-1">
-                  <span class="text-xs font-bold text-slate-500">Bairro</span>
+                  <span class="text-xs font-bold text-slate-500">Bairro <span class="text-red-500">*</span></span>
                   <input class="field" placeholder="Bairro" formControlName="district">
                 </label>
                 <label class="space-y-1">
-                  <span class="text-xs font-bold text-slate-500">Cidade</span>
+                  <span class="text-xs font-bold text-slate-500">Cidade <span class="text-red-500">*</span></span>
                   <input class="field" placeholder="Cidade" formControlName="city">
                 </label>
                 <label class="space-y-1">
-                  <span class="text-xs font-bold text-slate-500">Estado</span>
+                  <span class="text-xs font-bold text-slate-500">Estado <span class="text-red-500">*</span></span>
                   <input class="field" placeholder="UF" maxlength="2" formControlName="state">
                 </label>
               </div>
@@ -472,13 +478,13 @@ export class ClientsComponent implements OnInit {
     email: ['', [Validators.required, Validators.email]],
     phone: [''],
     whatsapp: [''],
-    zipCode: [''],
-    street: [''],
-    number: [''],
+    zipCode: ['', Validators.required],
+    street: ['', Validators.required],
+    number: ['', Validators.required],
     complement: [''],
-    district: [''],
-    city: [''],
-    state: ['', [Validators.minLength(2), Validators.maxLength(2)]],
+    district: ['', Validators.required],
+    city: ['', Validators.required],
+    state: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(2)]],
     notes: ['']
   });
 
@@ -595,6 +601,8 @@ export class ClientsComponent implements OnInit {
     this.applyPersonValidators();
     if (this.clientForm.invalid) {
       this.clientForm.markAllAsTouched();
+      const addressControls = ['zipCode', 'street', 'number', 'district', 'city', 'state'];
+      if (addressControls.some((control) => this.clientForm.get(control)?.invalid)) this.activeTab.set('address');
       this.toast.validation('Preencha os dados obrigatórios do cliente.');
       return;
     }
