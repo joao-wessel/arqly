@@ -84,5 +84,15 @@ public final class PortalDtos {
                                          UUID documentId, String documentTitle, ApprovalStatus status, String description,
                                          LocalDate deadline, Instant approvedAt, String clientComment, Instant createdAt) {}
 
+    public record PortalDiaryResponse(UUID id, UUID projectId, String projectName, String title, String entryType,
+                                      LocalDate entryDate, String responsibleName, String summary, String location,
+                                      List<String> stages, List<PortalDiaryObservationResponse> observations,
+                                      List<PortalDiaryOccurrenceResponse> occurrences, List<PortalDiaryDecisionResponse> decisions,
+                                      List<PortalDiaryPhotoResponse> photos, LocalDate nextVisitDate, Instant publishedAt) {}
+    public record PortalDiaryObservationResponse(String title, String description, String category, String status) {}
+    public record PortalDiaryOccurrenceResponse(String title, String description, String severity, boolean resolved, LocalDate dueDate) {}
+    public record PortalDiaryDecisionResponse(String description, String decidedBy, LocalDate decisionDate) {}
+    public record PortalDiaryPhotoResponse(UUID fileId, String fileName, String mimeType, String caption, String description) {}
+
     public record PortalProfileRequest(String phone, String language, String themeMode, String colorPalette) {}
 }

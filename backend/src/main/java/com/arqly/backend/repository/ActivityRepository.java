@@ -14,4 +14,6 @@ public interface ActivityRepository extends JpaRepository<Activity, UUID>, JpaSp
             UUID tenantId, UUID clientId, ActivityVisibility visibility);
     List<Activity> findTop20ByTenantIdAndProjectIdAndVisibilityAndDeletedFalseOrderByCreatedAtDesc(
             UUID tenantId, UUID projectId, ActivityVisibility visibility);
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"content", "project", "project.responsibleUser", "project.projectManager"})
+    List<Activity> findTop20ByTenantIdAndDeletedFalseOrderByCreatedAtDesc(UUID tenantId);
 }

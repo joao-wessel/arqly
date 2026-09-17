@@ -1,4 +1,4 @@
-﻿import { DatePipe, DecimalPipe } from '@angular/common';
+import { DatePipe, DecimalPipe } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -42,6 +42,10 @@ interface ProjectSummary {
   templateId?: string | null; templateName?: string | null; responsibleUserId?: string | null; responsibleName?: string | null;
   projectManagerId?: string | null; projectManagerName?: string | null; responsibleArchitect?: string | null; status: ProjectStatus;
   expectedEndDate?: string | null; contractedValue: number; progressPercentage: number; createdAt: string; updatedAt: string;
+}
+interface ConstructionDiarySummary {
+  id: string; title: string; entryType: string; status: string; entryDate: string;
+  responsibleName?: string; occurrenceCount: number; photoCount: number; visibility: string; nextVisitDate?: string;
 }
 interface ProjectStats {
   active: number; completed: number; paused: number; delayedStages: number;
@@ -442,8 +446,8 @@ export class ProjectsComponent implements OnInit {
   private readonly http = inject(HttpClient);
   private readonly fb = inject(FormBuilder);
   private readonly toast = inject(ToastService);
-  readonly baseUrl = 'http://localhost:8080/api/tenant/projects';
-  readonly clientsUrl = 'http://localhost:8080/api/tenant/clients';
+  readonly baseUrl = '/api/tenant/projects';
+  readonly clientsUrl = '/api/tenant/clients';
 
   readonly mode = signal<ViewMode>('projects');
   readonly projectCreateModalOpen = signal(false);
@@ -520,10 +524,10 @@ export class ProjectsComponent implements OnInit {
     });
   }
   loadUsers() {
-    this.http.get<ApiResponse<Page<TenantUserOption>>>('http://localhost:8080/api/tenant/users?size=200&sort=name,asc').subscribe((r) => this.tenantUsers.set(r.data.content || []));
+    this.http.get<ApiResponse<Page<TenantUserOption>>>('/api/tenant/users?size=200&sort=name,asc').subscribe((r) => this.tenantUsers.set(r.data.content || []));
   }
   loadApprovedProposals() {
-    this.http.get<ApiResponse<Page<ProposalOption>>>('http://localhost:8080/api/tenant/proposals?status=ACCEPTED&size=200&sort=createdAt,desc').subscribe((r) => {
+    this.http.get<ApiResponse<Page<ProposalOption>>>('/api/tenant/proposals?status=ACCEPTED&size=200&sort=createdAt,desc').subscribe((r) => {
       this.approvedProposals.set((r.data.content || []).filter((proposal) => !proposal.projectCreated));
     });
   }
@@ -924,8 +928,27 @@ export class ProjectsComponent implements OnInit {
           }
           @if (activeTab() === 'files') {
             <div>
-              <app-file-explorer ownerType="PROJECT" [ownerId]="project()!.id" title="Arquivos do projeto" eyebrow="Acervo técnico" />
+              <app-file-explorer ownerType="PROJECT" [ownerId]="project()!.id" [relatedProjectId]="project()!.id" title="Arquivos do projeto" eyebrow="Acervo técnico" />
             </div>
+          }
+          @if (activeTab() === 'diary') {
+            <section class="space-y-5">
+              <div class="card p-6">
+                <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div><p class="text-xs font-extrabold uppercase tracking-[0.2em] text-arqly-700">Acompanhamento da obra</p><h3 class="mt-2 text-xl font-extrabold">Diário de Obra</h3><p class="mt-2 text-sm text-slate-500">Visitas, decisões, ocorrências e arquivos registrados para este projeto.</p></div>
+                  <a class="btn-primary" [routerLink]="['/app/construction-diary/new']" [queryParams]="{projectId: project()!.id}"><lucide-icon name="Plus" size="17"></lucide-icon>Novo registro</a>
+                </div>
+                <div class="mt-6 grid gap-3 sm:grid-cols-3">
+                  <div class="rounded-2xl bg-slate-50/70 p-4"><p class="text-xs font-bold text-slate-400">REGISTROS</p><strong class="mt-2 block text-2xl">{{ diaryEntries().length }}</strong></div>
+                  <div class="rounded-2xl bg-slate-50/70 p-4"><p class="text-xs font-bold text-slate-400">PUBLICADOS</p><strong class="mt-2 block text-2xl text-arqly-700">{{ publishedDiaryCount() }}</strong></div>
+                  <div class="rounded-2xl bg-slate-50/70 p-4"><p class="text-xs font-bold text-slate-400">OCORRÊNCIAS</p><strong class="mt-2 block text-2xl text-amber-600">{{ diaryOccurrenceCount() }}</strong></div>
+                </div>
+              </div>
+              <div class="card overflow-hidden">
+                <div class="flex items-center justify-between border-b border-slate-200 p-5"><div><h3 class="font-extrabold">Registros recentes</h3><p class="mt-1 text-sm text-slate-500">Acompanhe os últimos acontecimentos da obra.</p></div><a class="text-sm font-bold text-arqly-700" [routerLink]="['/app/construction-diary']" [queryParams]="{projectId: project()!.id}">Ver todos</a></div>
+                <div class="divide-y divide-slate-100">@for (entry of diaryEntries().slice(0, 5); track entry.id) {<a class="block p-5 transition hover:bg-slate-50" [routerLink]="['/app/construction-diary', entry.id]"><div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><div class="flex flex-wrap items-center gap-2"><span class="rounded-full bg-arqly-50 px-3 py-1 text-xs font-bold text-arqly-700">{{ diaryTypeLabel(entry.entryType) }}</span><span class="rounded-full px-3 py-1 text-xs font-bold" [class]="diaryStatusClass(entry.status)">{{ diaryStatusLabel(entry.status) }}</span><span class="text-xs font-bold text-slate-400">{{ entry.entryDate | date:'dd/MM/yyyy' }}</span></div><strong class="mt-3 block">{{ entry.title }}</strong><p class="mt-1 text-sm text-slate-500">{{ entry.responsibleName || 'Sem responsável' }} · {{ entry.photoCount }} foto(s) · {{ entry.occurrenceCount }} ocorrência(s)</p></div><span class="text-xs font-bold" [class.text-arqly-700]="entry.visibility === 'CLIENT_VISIBLE'" [class.text-slate-400]="entry.visibility !== 'CLIENT_VISIBLE'">{{ entry.visibility === 'CLIENT_VISIBLE' ? 'Visível ao cliente' : 'Interno' }}</span></div></a>} @empty {<p class="p-8 text-center text-sm text-slate-500">Nenhum registro de Diário de Obra para este projeto.</p>}</div>
+              </div>
+            </section>
           }
           @if (activeTab() === 'approvals') {
             <div class="grid gap-5 xl:grid-cols-[0.9fr_1.1fr]">
@@ -1010,7 +1033,7 @@ export class ProjectDetailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly fb = inject(FormBuilder);
   private readonly toast = inject(ToastService);
-  readonly baseUrl = 'http://localhost:8080/api/tenant/projects';
+  readonly baseUrl = '/api/tenant/projects';
   readonly project = signal<ProjectDetail | null>(null);
   readonly phases = signal<ProjectPhase[]>([]);
   readonly activeTab = signal('summary');
@@ -1024,7 +1047,8 @@ export class ProjectDetailComponent implements OnInit {
   readonly draggedPhase = signal<ProjectPhase | null>(null);
   readonly draggedStage = signal<ProjectStage | null>(null);
   readonly approvals = signal<ProjectApproval[]>([]);
-    readonly tabs = [{ label: 'Resumo', value: 'summary' }, { label: 'Etapas', value: 'stages' }, { label: 'Serviços', value: 'services' }, { label: 'Informações', value: 'info' }, { label: 'Documentos', value: 'documents' }, { label: 'Arquivos', value: 'files' }, { label: 'Aprovações', value: 'approvals' }, { label: 'Financeiro', value: 'finance', disabled: true }];
+  readonly diaryEntries = signal<ConstructionDiarySummary[]>([]);
+    readonly tabs = [{ label: 'Resumo', value: 'summary' }, { label: 'Etapas', value: 'stages' }, { label: 'Diário de Obra', value: 'diary' }, { label: 'Serviços', value: 'services' }, { label: 'Informações', value: 'info' }, { label: 'Documentos', value: 'documents' }, { label: 'Arquivos', value: 'files' }, { label: 'Aprovações', value: 'approvals' }, { label: 'Financeiro', value: 'finance', disabled: true }];
   readonly statusOptions = [{ label: 'Planejamento', value: 'PLANNING' }, { label: 'Em andamento', value: 'IN_PROGRESS' }, { label: 'Pausado', value: 'ON_HOLD' }, { label: 'Concluído', value: 'COMPLETED' }, { label: 'Cancelado', value: 'CANCELLED' }];
   readonly stageStatusOptions = [{ label: 'Não iniciada', value: 'NOT_STARTED' }, { label: 'Em andamento', value: 'IN_PROGRESS' }, { label: 'Aguardando cliente', value: 'WAITING_CLIENT' }, { label: 'Aguardando aprovação', value: 'WAITING_APPROVAL' }, { label: 'Pausada', value: 'ON_HOLD' }, { label: 'Concluída', value: 'COMPLETED' }, { label: 'Cancelada', value: 'CANCELLED' }];
   readonly iconOptions = PHASE_ICON_OPTIONS;
@@ -1034,7 +1058,7 @@ export class ProjectDetailComponent implements OnInit {
   readonly stageForm = this.fb.nonNullable.group({ name: ['', Validators.required], description: [''], order: [1], status: ['NOT_STARTED'], plannedStart: [''], plannedEnd: [''], actualStart: [''], actualEnd: [''], completionPercentage: [0], weightPercentage: [0], progressCalculationMode: ['MANUAL'], responsibleUserId: [''], responsible: [''], notes: [''], checklistText: [''] });
   readonly approvalForm = this.fb.nonNullable.group({ description: ['', Validators.required], stageId: [''], deadline: [''] });
 
-  ngOnInit() { this.loadUsers(); this.load(); this.loadApprovals(); }
+  ngOnInit() { this.loadUsers(); this.load(); this.loadApprovals(); this.loadDiary(); }
   projectId() { return this.route.snapshot.paramMap.get('id')!; }
   load() {
     this.http.get<ApiResponse<ProjectDetail>>(`${this.baseUrl}/${this.projectId()}`).subscribe((r) => {
@@ -1044,8 +1068,9 @@ export class ProjectDetailComponent implements OnInit {
       this.form.patchValue({ name: r.data.name, description: r.data.description || '', status: r.data.status, responsibleUserId: r.data.responsibleUserId || '', projectManagerId: r.data.projectManagerId || '', responsibleArchitect: r.data.responsibleArchitect || '', expectedEndDate: r.data.expectedEndDate || '', internalNotes: r.data.internalNotes || '' });
     });
   }
-  loadUsers() { this.http.get<ApiResponse<Page<TenantUserOption>>>('http://localhost:8080/api/tenant/users?size=200&sort=name,asc').subscribe((response) => this.tenantUsers.set(response.data.content)); }
-  loadApprovals() { this.http.get<ApiResponse<ProjectApproval[]>>(`http://localhost:8080/api/tenant/approvals/projects/${this.projectId()}`).subscribe((response) => this.approvals.set(response.data)); }
+  loadUsers() { this.http.get<ApiResponse<Page<TenantUserOption>>>('/api/tenant/users?size=200&sort=name,asc').subscribe((response) => this.tenantUsers.set(response.data.content)); }
+  loadApprovals() { this.http.get<ApiResponse<ProjectApproval[]>>(`/api/tenant/approvals/projects/${this.projectId()}`).subscribe((response) => this.approvals.set(response.data)); }
+  loadDiary() { this.http.get<ApiResponse<ConstructionDiarySummary[]>>(`/api/tenant/construction-diary/project/${this.projectId()}`).subscribe({ next: response => this.diaryEntries.set(response.data || []), error: () => this.diaryEntries.set([]) }); }
   save() { const p = this.project(); if (!p) return; const raw = this.form.getRawValue(); this.http.put<ApiResponse<ProjectDetail>>(`${this.baseUrl}/${p.id}`, { ...raw, responsibleUserId: raw.responsibleUserId || null, projectManagerId: raw.projectManagerId || null, templateId: p.templateId, startDate: p.startDate, completedAt: p.completedAt }).subscribe({ next: () => { this.toast.success('Projeto atualizado'); this.load(); }, error: () => this.toast.error('Não foi possível salvar o projeto') }); }
 
   openPhaseModal(phase?: ProjectPhase) { this.editingPhase.set(phase || null); this.phaseForm.reset({ name: phase?.name || '', description: phase?.description || '', order: phase?.order || this.phases().length + 1, color: phase?.color || '#0f766e', icon: normalizedPhaseIcon(phase?.icon), notes: phase?.notes || '' }); this.phaseModalOpen.set(true); }
@@ -1076,7 +1101,7 @@ export class ProjectDetailComponent implements OnInit {
   createApproval() {
     if (this.approvalForm.invalid) { this.approvalForm.markAllAsTouched(); this.toast.validation('Informe a descrição da aprovação.'); return; }
     const raw = this.approvalForm.getRawValue();
-    this.http.post<ApiResponse<ProjectApproval>>('http://localhost:8080/api/tenant/approvals', {
+    this.http.post<ApiResponse<ProjectApproval>>('/api/tenant/approvals', {
       projectId: this.projectId(), stageId: raw.stageId || null, description: raw.description, deadline: raw.deadline || null
     }).subscribe({ next: () => { this.toast.success('Aprovação solicitada'); this.approvalForm.reset({ description: '', stageId: '', deadline: '' }); this.loadApprovals(); }, error: () => this.toast.error('Não foi possível solicitar a aprovação') });
   }
@@ -1104,6 +1129,11 @@ export class ProjectDetailComponent implements OnInit {
   totalStages() { return this.phases().reduce((total, phase) => total + phase.stages.length, 0); }
   openStages() { return this.phases().flatMap((phase) => phase.stages).filter((stage) => stage.status !== 'COMPLETED' && stage.status !== 'CANCELLED'); }
   billingUnitLabel(unit: string) { return ({ UN: 'Unidade', M2: 'm²', M: 'Metro', HOUR: 'Hora', DAY: 'Dia', MONTH: 'Mês', PROJECT: 'Projeto', VISIT: 'Visita', OTHER: 'Outro' }[unit] || unit); }
+  diaryStatusLabel(status: string) { return ({ DRAFT: 'Rascunho', PUBLISHED: 'Publicado', ARCHIVED: 'Arquivado' }[status] || status); }
+  diaryStatusClass(status: string) { return status === 'PUBLISHED' ? 'bg-arqly-50 text-arqly-700' : status === 'ARCHIVED' ? 'bg-slate-100 text-slate-500' : 'bg-amber-50 text-amber-700'; }
+  diaryTypeLabel(type: string) { return ({ VISIT: 'Visita', FOLLOW_UP: 'Acompanhamento', INSPECTION: 'Inspeção', MEETING: 'Reunião', OCCURRENCE: 'Ocorrência', OTHER: 'Outro' }[type] || type); }
+  publishedDiaryCount() { return this.diaryEntries().filter(entry => entry.status === 'PUBLISHED').length; }
+  diaryOccurrenceCount() { return this.diaryEntries().reduce((total, entry) => total + entry.occurrenceCount, 0); }
   tenantUserOptions(includeEmpty = false) { const options = this.tenantUsers().map((user) => ({ label: `${user.name} · ${user.tenantAdmin ? 'Administrador' : 'Usuário comum'}`, value: user.id })); return includeEmpty ? [{ label: 'Herdar do projeto', value: '' }, ...options] : options; }
   stageApprovalOptions() { return [{ label: 'Projeto geral', value: '' }, ...this.phases().flatMap((phase) => phase.stages.map((stage) => ({ label: `${phase.name} · ${stage.name}`, value: stage.id })))]; }
   approvalStatusLabel(status: ProjectApproval['status']) { return ({ PENDING: 'Pendente', APPROVED: 'Aprovada', REJECTED: 'Ajustes solicitados', EXPIRED: 'Expirada', CANCELLED: 'Cancelada' }[status]); }

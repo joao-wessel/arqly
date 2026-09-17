@@ -39,7 +39,7 @@ export class TenantDashboardComponent implements OnInit {
   constructor(private readonly http: HttpClient) {}
 
   ngOnInit() {
-    this.http.get<ApiResponse<TenantDashboard>>('http://localhost:8080/api/tenant/dashboard')
+    this.http.get<ApiResponse<TenantDashboard>>('/api/tenant/dashboard')
       .subscribe((response) => this.dashboard.set(response.data));
   }
 }

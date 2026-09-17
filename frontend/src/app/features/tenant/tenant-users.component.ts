@@ -226,7 +226,7 @@ export class TenantUsersComponent implements OnInit {
   }
 
   load() {
-    this.http.get<ApiResponse<Page<TenantUser>>>('http://localhost:8080/api/tenant/users')
+    this.http.get<ApiResponse<Page<TenantUser>>>('/api/tenant/users')
       .subscribe((response) => this.users.set(response.data.content));
   }
 
@@ -257,8 +257,8 @@ export class TenantUsersComponent implements OnInit {
     }
     const user = this.editingUser();
     const request = user
-      ? this.http.put<ApiResponse<TenantUser>>(`http://localhost:8080/api/tenant/users/${user.id}`, this.userForm.getRawValue())
-      : this.http.post<ApiResponse<TenantUser>>('http://localhost:8080/api/tenant/users', this.userForm.getRawValue());
+      ? this.http.put<ApiResponse<TenantUser>>(`/api/tenant/users/${user.id}`, this.userForm.getRawValue())
+      : this.http.post<ApiResponse<TenantUser>>('/api/tenant/users', this.userForm.getRawValue());
     request.subscribe({
       next: () => {
         this.closeUserModal();
@@ -281,7 +281,7 @@ export class TenantUsersComponent implements OnInit {
   deleteUser() {
     const user = this.selectedUser();
     if (!user) return;
-    this.http.delete(`http://localhost:8080/api/tenant/users/${user.id}`).subscribe({
+    this.http.delete(`/api/tenant/users/${user.id}`).subscribe({
       next: () => {
         this.closeDeleteModal();
         this.load();

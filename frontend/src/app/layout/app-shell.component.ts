@@ -4,11 +4,13 @@ import { LucideAngularModule } from 'lucide-angular';
 import { AuthService } from '../core/auth/auth.service';
 import { AppearanceControlsComponent } from '../shared/components/appearance-controls.component';
 import { LogoComponent } from '../shared/components/logo.component';
+import { NotificationCenterComponent } from '../shared/components/notification-center.component';
+import { GlobalSearchComponent } from '../shared/components/global-search.component';
 
 @Component({
   selector: 'app-shell',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, LucideAngularModule, LogoComponent, AppearanceControlsComponent],
+  imports: [RouterOutlet, RouterLink, LucideAngularModule, LogoComponent, AppearanceControlsComponent, NotificationCenterComponent, GlobalSearchComponent],
   template: `
     <div class="min-h-screen lg:grid lg:grid-cols-[280px_1fr]">
       <aside class="fixed inset-y-0 left-0 z-20 hidden w-[280px] border-r border-slate-200/80 bg-white/90 p-6 backdrop-blur lg:flex lg:flex-col">
@@ -48,13 +50,8 @@ import { LogoComponent } from '../shared/components/logo.component';
             <p class="text-xs font-bold uppercase tracking-[0.18em] text-arqly-600">Arqly</p>
             <h1 class="truncate text-lg font-extrabold lg:text-xl">{{ title() }}</h1>
           </div>
-          <div class="ml-auto hidden w-full max-w-xl items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-400 shadow-sm md:flex">
-            <lucide-icon name="Search" size="20"></lucide-icon>
-            <span class="text-sm">Buscar projetos, tarefas, documentos...</span>
-          </div>
-          <button class="hidden h-11 w-11 place-items-center rounded-2xl border border-slate-200 bg-white sm:grid">
-            <lucide-icon name="Bell" size="20"></lucide-icon>
-          </button>
+          <div class="ml-auto hidden w-full max-w-xl md:block"><app-global-search /></div>
+          <div class="hidden sm:block"><app-notification-center /></div>
           <app-appearance-controls />
         </header>
 
@@ -128,6 +125,9 @@ export class AppShellComponent {
         { label: 'Briefings', path: '/app/briefings', icon: 'ClipboardList' },
         { label: 'Propostas', path: '/app/proposals', icon: 'FileText' },
         { label: 'Projetos', path: '/app/projects', icon: 'Folder' },
+        { label: 'Agenda', path: '/app/calendar', icon: 'CalendarDays' },
+        { label: 'Financeiro', path: '/app/financial', icon: 'CreditCard' },
+        { label: 'Diário de Obra', path: '/app/construction-diary', icon: 'ClipboardList' },
         { label: 'Documentos', path: '/app/documents/generated', icon: 'FileText' },
         { label: 'Arquivos', path: '/app/files', icon: 'Archive' },
         { label: 'Serviços', path: '/app/services', icon: 'ListChecks' },

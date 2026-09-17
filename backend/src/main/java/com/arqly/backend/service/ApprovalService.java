@@ -1,6 +1,7 @@
 package com.arqly.backend.service;
 
 import com.arqly.backend.activity.ActivityEventPublisher;
+import com.arqly.backend.notification.NotificationDomainPublisher;
 import com.arqly.backend.dto.ApprovalDtos.ApprovalDecisionRequest;
 import com.arqly.backend.dto.ApprovalDtos.ApprovalRequest;
 import com.arqly.backend.dto.ApprovalDtos.ApprovalResponse;
@@ -30,19 +31,19 @@ public class ApprovalService {
     private final GeneratedDocumentRepository documentRepository;
     private final TenantUserRepository userRepository;
     private final ActivityEventPublisher activityPublisher;
-    private final NotificationService notificationService;
+    private final NotificationDomainPublisher notifications;
 
     public ApprovalService(ApprovalRepository repository, ProjectRepository projectRepository,
                            ProjectStageRepository stageRepository, GeneratedDocumentRepository documentRepository,
                            TenantUserRepository userRepository, ActivityEventPublisher activityPublisher,
-                           NotificationService notificationService) {
+                           NotificationDomainPublisher notifications) {
         this.repository = repository;
         this.projectRepository = projectRepository;
         this.stageRepository = stageRepository;
         this.documentRepository = documentRepository;
         this.userRepository = userRepository;
         this.activityPublisher = activityPublisher;
-        this.notificationService = notificationService;
+        this.notifications = notifications;
     }
 
     @Transactional(readOnly = true)
@@ -81,7 +82,6 @@ public class ApprovalService {
         }
         approval = repository.save(approval);
         publish(approval, userId, actor, "Aprovação solicitada", "solicitou aprovação do cliente");
-        notificationService.approvalRequested();
         return toResponse(approval);
     }
 
@@ -105,6 +105,7 @@ public class ApprovalService {
         approval.setClientComment(comment);
         publish(approval, null, displayName(approval.getClient()), "Aprovação do cliente",
                 approved ? "aprovou a solicitação" : "solicitou ajustes");
+        if (!approved) notifications.approvalRejected(approval);
         return toResponse(approval);
     }
 

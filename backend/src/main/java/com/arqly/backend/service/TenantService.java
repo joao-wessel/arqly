@@ -28,10 +28,11 @@ public class TenantService {
     private final TokenService tokenService;
     private final SettingsService settingsService;
     private final EmailService emailService;
+    private final ResidentialProjectTemplateService residentialTemplateService;
 
     public TenantService(TenantRepository tenantRepository, TenantUserRepository userRepository, TenantMapper mapper,
                          PasswordEncoder passwordEncoder, TokenService tokenService, SettingsService settingsService,
-                         EmailService emailService) {
+                         EmailService emailService, ResidentialProjectTemplateService residentialTemplateService) {
         this.tenantRepository = tenantRepository;
         this.userRepository = userRepository;
         this.mapper = mapper;
@@ -39,6 +40,7 @@ public class TenantService {
         this.tokenService = tokenService;
         this.settingsService = settingsService;
         this.emailService = emailService;
+        this.residentialTemplateService = residentialTemplateService;
     }
 
     @Transactional
@@ -50,7 +52,9 @@ public class TenantService {
         if (tenant.getStatus() == null) {
             tenant.setStatus(com.arqly.backend.entity.TenantStatus.ACTIVE);
         }
-        return mapper.toResponse(tenantRepository.save(tenant));
+        tenant = tenantRepository.save(tenant);
+        residentialTemplateService.ensureDefaultTemplate(tenant);
+        return mapper.toResponse(tenant);
     }
 
     public Page<TenantResponse> list(Pageable pageable) {

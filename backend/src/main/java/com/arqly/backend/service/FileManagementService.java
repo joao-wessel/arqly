@@ -8,6 +8,9 @@ import com.arqly.backend.dto.FileDtos.FileUpdateRequest;
 import com.arqly.backend.dto.FileDtos.FileUploadMetadata;
 import com.arqly.backend.dto.FileDtos.FileVersionResponse;
 import com.arqly.backend.entity.ActivityType;
+import com.arqly.backend.entity.ActivityVisibility;
+import com.arqly.backend.entity.ConstructionDiaryPhoto;
+import com.arqly.backend.entity.FileOwnerType;
 import com.arqly.backend.entity.FileResource;
 import com.arqly.backend.entity.FileResourceStatus;
 import com.arqly.backend.entity.FileTag;
@@ -17,6 +20,8 @@ import com.arqly.backend.exception.BusinessException;
 import com.arqly.backend.exception.NotFoundException;
 import com.arqly.backend.repository.FileResourceRepository;
 import com.arqly.backend.repository.FileTagRepository;
+import com.arqly.backend.repository.ConstructionDiaryEntryRepository;
+import com.arqly.backend.repository.ConstructionDiaryPhotoRepository;
 import com.arqly.backend.repository.TenantRepository;
 import com.arqly.backend.repository.TenantUserRepository;
 import com.arqly.backend.service.file.FileOwnerContext;
@@ -44,12 +49,15 @@ public class FileManagementService {
     private final FileSearchService searchService;
     private final FileOwnershipService ownershipService;
     private final ActivityEventPublisher activityPublisher;
+    private final ConstructionDiaryEntryRepository diaryEntries;
+    private final ConstructionDiaryPhotoRepository diaryPhotos;
 
     public FileManagementService(FileResourceRepository repository, FileTagRepository tagRepository,
                                  TenantRepository tenantRepository, TenantUserRepository userRepository,
                                  FolderService folderService, FileStorageService storageService,
                                  FileVersionService versionService, FileSearchService searchService,
-                                 FileOwnershipService ownershipService, ActivityEventPublisher activityPublisher) {
+                                 FileOwnershipService ownershipService, ActivityEventPublisher activityPublisher,
+                                 ConstructionDiaryEntryRepository diaryEntries, ConstructionDiaryPhotoRepository diaryPhotos) {
         this.repository = repository;
         this.tagRepository = tagRepository;
         this.tenantRepository = tenantRepository;
@@ -60,6 +68,8 @@ public class FileManagementService {
         this.searchService = searchService;
         this.ownershipService = ownershipService;
         this.activityPublisher = activityPublisher;
+        this.diaryEntries = diaryEntries;
+        this.diaryPhotos = diaryPhotos;
     }
 
     @Transactional
@@ -70,6 +80,7 @@ public class FileManagementService {
         var folder = metadata.folderId() == null ? null : folderService.find(tenantId, metadata.folderId());
         validateFolder(folder, metadata.ownerType(), metadata.ownerId());
         var originalName = cleanName(upload.getOriginalFilename());
+        validateUploadName(originalName);
         var existing = repository.findFirstByTenantIdAndOwnerTypeAndOwnerIdAndFolderIdAndNameIgnoreCaseAndStatusNot(
                 tenantId, metadata.ownerType(), metadata.ownerId(), metadata.folderId(), originalName, FileResourceStatus.DELETED);
         if (existing.isPresent()) {
@@ -104,7 +115,10 @@ public class FileManagementService {
         file.setTags(tags(tenantId, metadata.tags()));
         file = repository.save(file);
         versionService.register(file, user, stored.storageKey(), stored.checksum(), stored.size(), 1, metadata.revisionComment());
-        publish(file, owner, userId, actor, ActivityType.FILE_UPLOADED, "Arquivo enviado",
+        registerDiaryPhoto(tenantId, file);
+        var activityType = metadata.ownerType() == FileOwnerType.CONSTRUCTION_DIARY_ENTRY
+                ? ActivityType.DIARY_FILE_ADDED : ActivityType.FILE_UPLOADED;
+        publish(file, owner, userId, actor, activityType, "Arquivo enviado",
                 "enviou " + file.getName());
         return searchService.response(file);
     }
@@ -116,12 +130,14 @@ public class FileManagementService {
         var file = find(tenantId, fileId);
         if (file.getStatus() == FileResourceStatus.DELETED) throw new BusinessException("Restaure o arquivo antes de versioná-lo.");
         var owner = ownershipService.validate(tenantId, file.getOwnerType(), file.getOwnerId());
-        var extension = extension(cleanName(upload.getOriginalFilename()));
+        var originalName = cleanName(upload.getOriginalFilename());
+        validateUploadName(originalName);
+        var extension = extension(originalName);
         var stored = store(tenantId, extension, upload);
         var user = user(tenantId, userId);
         var nextVersion = file.getVersion() + 1;
         versionService.register(file, user, stored.storageKey(), stored.checksum(), stored.size(), nextVersion, comment);
-        file.setOriginalName(cleanName(upload.getOriginalFilename()));
+        file.setOriginalName(originalName);
         file.setExtension(extension);
         file.setMimeType(contentType(upload, extension));
         file.setSize(stored.size());
@@ -280,8 +296,19 @@ public class FileManagementService {
     }
 
     private String cleanName(String value) {
-        var name = value == null ? "arquivo" : Path.of(value).getFileName().toString().trim();
-        return name.isBlank() ? "arquivo" : name.replaceAll("[\\r\\n]", "_");
+        if (value != null && value.indexOf('\0') >= 0) throw new BusinessException("Nome de arquivo inválido.");
+        try {
+            var name = value == null ? "arquivo" : Path.of(value).getFileName().toString().trim();
+            return name.isBlank() ? "arquivo" : name.replaceAll("\\p{Cntrl}", "_");
+        } catch (java.nio.file.InvalidPathException exception) {
+            throw new BusinessException("Nome de arquivo inválido.");
+        }
+    }
+
+    private void validateUploadName(String name) {
+        if (name.length() > 255 || ".".equals(name) || "..".equals(name)) {
+            throw new BusinessException("Nome de arquivo inválido.");
+        }
     }
 
     private String extension(String name) {
@@ -290,7 +317,6 @@ public class FileManagementService {
     }
 
     private String contentType(MultipartFile upload, String extension) {
-        if (upload.getContentType() != null && !upload.getContentType().isBlank()) return upload.getContentType();
         return switch (extension) {
             case "pdf" -> "application/pdf";
             case "png" -> "image/png";
@@ -300,6 +326,22 @@ public class FileManagementService {
             case "txt", "md", "markdown" -> "text/plain";
             default -> "application/octet-stream";
         };
+    }
+
+    private void registerDiaryPhoto(UUID tenantId, FileResource file) {
+        if (file.getOwnerType() != FileOwnerType.CONSTRUCTION_DIARY_ENTRY || !isImage(file.getExtension())) return;
+        var entry = diaryEntries.findByIdAndTenantIdAndDeletedFalse(file.getOwnerId(), tenantId)
+                .orElseThrow(() -> new NotFoundException("Registro do Diário não encontrado."));
+        var photo = new ConstructionDiaryPhoto();
+        photo.setDiaryEntry(entry);
+        photo.setFile(file);
+        photo.setOrder(diaryPhotos.findAllByDiaryEntryIdOrderByOrderAsc(entry.getId()).size() + 1);
+        photo.setVisibility(ActivityVisibility.valueOf(file.getVisibility().name()));
+        diaryPhotos.save(photo);
+    }
+
+    private boolean isImage(String extension) {
+        return List.of("png", "jpg", "jpeg", "webp", "svg").contains(extension.toLowerCase(Locale.ROOT));
     }
 
     private void publish(FileResource file, FileOwnerContext owner, UUID userId, String actor,

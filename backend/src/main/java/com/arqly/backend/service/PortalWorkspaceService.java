@@ -15,6 +15,7 @@ import com.arqly.backend.entity.Activity;
 import com.arqly.backend.entity.ActivityVisibility;
 import com.arqly.backend.entity.Client;
 import com.arqly.backend.entity.ClientPersonType;
+import com.arqly.backend.entity.ConstructionDiaryStatus;
 import com.arqly.backend.entity.FileOwnerType;
 import com.arqly.backend.entity.FileResource;
 import com.arqly.backend.entity.FileResourceStatus;
@@ -27,6 +28,7 @@ import com.arqly.backend.entity.ProposalStatus;
 import com.arqly.backend.exception.NotFoundException;
 import com.arqly.backend.repository.ActivityRepository;
 import com.arqly.backend.repository.ApprovalRepository;
+import com.arqly.backend.repository.ConstructionDiaryEntryRepository;
 import com.arqly.backend.repository.FileResourceRepository;
 import com.arqly.backend.repository.GeneratedDocumentRepository;
 import com.arqly.backend.repository.ProjectPhaseRepository;
@@ -55,6 +57,7 @@ public class PortalWorkspaceService {
     private final ProposalRepository proposalRepository;
     private final GeneratedDocumentRepository documentRepository;
     private final FileResourceRepository fileRepository;
+    private final ConstructionDiaryEntryRepository diaryEntryRepository;
     private final ActivityRepository activityRepository;
     private final ApprovalRepository approvalRepository;
     private final ApprovalService approvalService;
@@ -65,6 +68,7 @@ public class PortalWorkspaceService {
                                   ProjectPhaseRepository phaseRepository, ProjectStageRepository stageRepository,
                                   ProposalRepository proposalRepository, GeneratedDocumentRepository documentRepository,
                                   FileResourceRepository fileRepository, ActivityRepository activityRepository,
+                                  ConstructionDiaryEntryRepository diaryEntryRepository,
                                   ApprovalRepository approvalRepository, ApprovalService approvalService,
                                   SettingsService settingsService, StorageProvider storageProvider) {
         this.authorizationService = authorizationService;
@@ -74,6 +78,7 @@ public class PortalWorkspaceService {
         this.proposalRepository = proposalRepository;
         this.documentRepository = documentRepository;
         this.fileRepository = fileRepository;
+        this.diaryEntryRepository = diaryEntryRepository;
         this.activityRepository = activityRepository;
         this.approvalRepository = approvalRepository;
         this.approvalService = approvalService;
@@ -226,6 +231,10 @@ public class PortalWorkspaceService {
         stageRepository.findAllByProjectIdOrdered(project.getId(), project.getTenant().getId()).forEach(stage ->
                 result.addAll(fileRepository.findAllByTenantIdAndOwnerTypeAndOwnerIdAndVisibilityAndStatusOrderByUpdatedAtDesc(
                         project.getTenant().getId(), FileOwnerType.PROJECT_STAGE, stage.getId(), FileVisibility.CLIENT_VISIBLE, FileResourceStatus.ACTIVE)));
+        diaryEntryRepository.findAllByProjectIdAndTenantIdAndStatusAndVisibilityAndDeletedFalseOrderByEntryDateDescCreatedAtDesc(
+                        project.getId(), project.getTenant().getId(), ConstructionDiaryStatus.PUBLISHED, ActivityVisibility.CLIENT_VISIBLE)
+                .forEach(entry -> result.addAll(fileRepository.findAllByTenantIdAndOwnerTypeAndOwnerIdAndVisibilityAndStatusOrderByUpdatedAtDesc(
+                        project.getTenant().getId(), FileOwnerType.CONSTRUCTION_DIARY_ENTRY, entry.getId(), FileVisibility.CLIENT_VISIBLE, FileResourceStatus.ACTIVE)));
         return result.stream().sorted(Comparator.comparing(FileResource::getUpdatedAt).reversed()).map(this::file).toList();
     }
 
@@ -236,6 +245,13 @@ public class PortalWorkspaceService {
         if (file.getOwnerType() == FileOwnerType.PROJECT_STAGE) {
             return stageRepository.findByIdAndTenantIdAndDeletedFalse(file.getOwnerId(), client.getTenant().getId())
                     .filter(stage -> stage.getProjectPhase().getProject().getClient().getId().equals(client.getId()))
+                    .isPresent();
+        }
+        if (file.getOwnerType() == FileOwnerType.CONSTRUCTION_DIARY_ENTRY) {
+            return diaryEntryRepository.findByIdAndTenantIdAndDeletedFalse(file.getOwnerId(), client.getTenant().getId())
+                    .filter(entry -> entry.getStatus() == ConstructionDiaryStatus.PUBLISHED)
+                    .filter(entry -> entry.getVisibility() == ActivityVisibility.CLIENT_VISIBLE)
+                    .filter(entry -> entry.getProject().getClient().getId().equals(client.getId()))
                     .isPresent();
         }
         return false;

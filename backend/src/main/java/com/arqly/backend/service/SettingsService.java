@@ -12,6 +12,7 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
@@ -20,10 +21,19 @@ public class SettingsService {
     private static final String GENERAL_KEY = "general";
     private final PlatformSettingRepository repository;
     private final ObjectMapper objectMapper;
+    private final String websiteUrl;
+    private final String frontendUrl;
+    private final String backendUrl;
 
-    public SettingsService(PlatformSettingRepository repository, ObjectMapper objectMapper) {
+    public SettingsService(PlatformSettingRepository repository, ObjectMapper objectMapper,
+                           @Value("${arqly.public.website-url}") String websiteUrl,
+                           @Value("${arqly.public.frontend-url}") String frontendUrl,
+                           @Value("${arqly.public.backend-url}") String backendUrl) {
         this.repository = repository;
         this.objectMapper = objectMapper;
+        this.websiteUrl = websiteUrl;
+        this.frontendUrl = frontendUrl;
+        this.backendUrl = backendUrl;
     }
 
     @Transactional
@@ -44,7 +54,7 @@ public class SettingsService {
 
     public GeneralSettings getGeneral() {
         return read(GENERAL_KEY, GeneralSettings.class,
-                new GeneralSettings("Arqly", "http://localhost", "http://localhost:4200", "http://localhost:8080", "pt-BR", "America/Sao_Paulo"));
+                new GeneralSettings("Arqly", websiteUrl, frontendUrl, backendUrl, "pt-BR", "America/Sao_Paulo"));
     }
 
     public void testSmtp(String to) {

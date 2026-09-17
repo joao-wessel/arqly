@@ -6,10 +6,10 @@ import { FileFolder, FileItem, FileOwnerType, FileStatus, FileVersion, Page } fr
 @Injectable({ providedIn: 'root' })
 export class FileApiService {
   private readonly http = inject(HttpClient);
-  readonly baseUrl = 'http://localhost:8080/api/tenant/files';
+  readonly baseUrl = '/api/tenant/files';
 
   list(options: {
-    ownerType?: FileOwnerType; ownerId?: string; folderId?: string | null; rootOnly?: boolean;
+    ownerType?: FileOwnerType; ownerId?: string; projectId?: string; folderId?: string | null; rootOnly?: boolean;
     search?: string; extension?: string; author?: string; tag?: string; status?: FileStatus;
     page?: number; size?: number;
   }) {

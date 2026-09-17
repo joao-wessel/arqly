@@ -1,4 +1,4 @@
-export type FileOwnerType = 'BRIEFING' | 'PROPOSAL' | 'PROJECT' | 'PROJECT_STAGE' | 'DOCUMENT' | 'TENANT';
+export type FileOwnerType = 'BRIEFING' | 'PROPOSAL' | 'PROJECT' | 'PROJECT_STAGE' | 'CONSTRUCTION_DIARY_ENTRY' | 'DOCUMENT' | 'TENANT';
 export type FileStatus = 'ACTIVE' | 'ARCHIVED' | 'DELETED';
 export type FileVisibility = 'INTERNAL' | 'CLIENT_VISIBLE';
 

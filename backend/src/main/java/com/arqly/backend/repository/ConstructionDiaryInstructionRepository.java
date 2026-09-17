@@ -1,0 +1,4 @@
+package com.arqly.backend.repository;
+import com.arqly.backend.entity.ConstructionDiaryInstruction;
+import java.util.List; import java.util.UUID; import org.springframework.data.jpa.repository.JpaRepository;
+public interface ConstructionDiaryInstructionRepository extends JpaRepository<ConstructionDiaryInstruction, UUID> { List<ConstructionDiaryInstruction> findAllByDiaryEntryIdOrderByDeadlineAsc(UUID entryId); void deleteByDiaryEntryId(UUID entryId); @org.springframework.data.jpa.repository.Query("select i from ConstructionDiaryInstruction i where i.diaryEntry.tenant.id=:tenantId and i.diaryEntry.deleted=false and i.completed=false and i.deadline between :start and :end") List<ConstructionDiaryInstruction> findDueForCalendar(@org.springframework.data.repository.query.Param("tenantId") UUID tenantId, @org.springframework.data.repository.query.Param("start") java.time.LocalDate start, @org.springframework.data.repository.query.Param("end") java.time.LocalDate end); }

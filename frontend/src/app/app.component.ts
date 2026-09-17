@@ -11,9 +11,9 @@ import { ToastContainerComponent } from './shared/components/toast/toast-contain
 export class AppComponent implements OnInit {
   ngOnInit() {
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js').catch(() => undefined);
-      });
+      navigator.serviceWorker.getRegistrations()
+        .then((registrations) => Promise.all(registrations.map((registration) => registration.unregister())))
+        .catch(() => undefined);
     }
   }
 }

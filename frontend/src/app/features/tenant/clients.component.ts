@@ -501,7 +501,7 @@ export class ClientsComponent implements OnInit {
     params.set('page', String(this.page()));
     params.set('size', '10');
     params.set('sort', 'createdAt,desc');
-    this.http.get<ApiResponse<Page<ClientSummary>>>(`http://localhost:8080/api/tenant/clients?${params.toString()}`)
+    this.http.get<ApiResponse<Page<ClientSummary>>>(`/api/tenant/clients?${params.toString()}`)
       .subscribe((response) => {
         this.clients.set(response.data.content);
         this.page.set(response.data.number);
@@ -559,7 +559,7 @@ export class ClientsComponent implements OnInit {
       notes: ''
     });
     if (id) {
-      this.http.get<ApiResponse<ClientDetail>>(`http://localhost:8080/api/tenant/clients/${id}`)
+      this.http.get<ApiResponse<ClientDetail>>(`/api/tenant/clients/${id}`)
         .subscribe((response) => {
           this.currentClient.set(response.data);
           this.clientForm.patchValue(response.data);
@@ -581,7 +581,7 @@ export class ClientsComponent implements OnInit {
     this.portalHistory.set([]);
     this.portalExpiresAt.set('');
     this.portalModalOpen.set(true);
-    this.http.get<ApiResponse<ClientDetail>>(`http://localhost:8080/api/tenant/clients/${client.id}`)
+    this.http.get<ApiResponse<ClientDetail>>(`/api/tenant/clients/${client.id}`)
       .subscribe((response) => {
         this.currentClient.set(response.data);
         this.portalExpiresAt.set(this.toLocalDateTimeInput(response.data.portalAccess?.expiresAt));
@@ -608,8 +608,8 @@ export class ClientsComponent implements OnInit {
     }
     const id = this.editingClient();
     const request = id
-      ? this.http.put<ApiResponse<ClientDetail>>(`http://localhost:8080/api/tenant/clients/${id}`, this.clientForm.getRawValue())
-      : this.http.post<ApiResponse<ClientDetail>>('http://localhost:8080/api/tenant/clients', this.clientForm.getRawValue());
+      ? this.http.put<ApiResponse<ClientDetail>>(`/api/tenant/clients/${id}`, this.clientForm.getRawValue())
+      : this.http.post<ApiResponse<ClientDetail>>('/api/tenant/clients', this.clientForm.getRawValue());
     request.subscribe({
       next: (response) => {
         this.currentClient.set(response.data);
@@ -626,7 +626,7 @@ export class ClientsComponent implements OnInit {
   generatePortalAccess() {
     const id = this.editingClient();
     if (!id) return;
-    this.http.post<ApiResponse<ClientPortalAccess>>(`http://localhost:8080/api/tenant/clients/${id}/portal-access`, {})
+    this.http.post<ApiResponse<ClientPortalAccess>>(`/api/tenant/clients/${id}/portal-access`, {})
       .subscribe((response) => {
         this.currentClient.update((client) => client ? { ...client, portalAccess: response.data } : client);
         this.portalExpiresAt.set(this.toLocalDateTimeInput(response.data.expiresAt));
@@ -639,7 +639,7 @@ export class ClientsComponent implements OnInit {
   revokePortalAccess() {
     const id = this.editingClient();
     if (!id) return;
-    this.http.delete<ApiResponse<ClientPortalAccess>>(`http://localhost:8080/api/tenant/clients/${id}/portal-access`)
+    this.http.delete<ApiResponse<ClientPortalAccess>>(`/api/tenant/clients/${id}/portal-access`)
       .subscribe(() => {
         this.currentClient.update((client) => client ? { ...client, portalAccess: null } : client);
         this.portalExpiresAt.set('');
@@ -663,7 +663,7 @@ export class ClientsComponent implements OnInit {
       this.toast.validation('Informe uma validade para o acesso.');
       return;
     }
-    this.http.patch<ApiResponse<ClientPortalAccess>>(`http://localhost:8080/api/tenant/clients/${id}/portal-access/validity`, {
+    this.http.patch<ApiResponse<ClientPortalAccess>>(`/api/tenant/clients/${id}/portal-access/validity`, {
       expiresAt: new Date(value).toISOString()
     }).subscribe({
       next: (response) => {
@@ -677,7 +677,7 @@ export class ClientsComponent implements OnInit {
   }
 
   loadPortalHistory(id: string) {
-    this.http.get<ApiResponse<ClientPortalAccess[]>>(`http://localhost:8080/api/tenant/clients/${id}/portal-access/history`)
+    this.http.get<ApiResponse<ClientPortalAccess[]>>(`/api/tenant/clients/${id}/portal-access/history`)
       .subscribe((response) => this.portalHistory.set(response.data));
   }
 
@@ -693,7 +693,7 @@ export class ClientsComponent implements OnInit {
   deleteClient() {
     const client = this.selectedClient();
     if (!client) return;
-    this.http.delete(`http://localhost:8080/api/tenant/clients/${client.id}`).subscribe({
+    this.http.delete(`/api/tenant/clients/${client.id}`).subscribe({
       next: () => {
         this.closeDeleteModal();
         this.load();

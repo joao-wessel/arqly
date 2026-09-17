@@ -132,7 +132,7 @@ export class ActivityFeedComponent implements OnChanges, OnDestroy {
   private readonly fb = inject(FormBuilder);
   private readonly toast = inject(ToastService);
   private readonly auth = inject(AuthService);
-  private readonly baseUrl = 'http://localhost:8080/api/tenant/activities';
+  private readonly baseUrl = '/api/tenant/activities';
 
   readonly activities = signal<ActivityItem[]>([]);
   readonly filter = signal<ActivityFilter>('ALL');

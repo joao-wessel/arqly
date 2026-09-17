@@ -2,42 +2,76 @@ spring:
   application:
     name: arqly-backend
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/arqly}
-    username: ${SPRING_DATASOURCE_USERNAME:arqly}
-    password: ${SPRING_DATASOURCE_PASSWORD:arqly}
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+    hikari:
+      connection-timeout: ${SPRING_DATASOURCE_CONNECTION_TIMEOUT:30000}
+      validation-timeout: ${SPRING_DATASOURCE_VALIDATION_TIMEOUT:5000}
+      maximum-pool-size: ${SPRING_DATASOURCE_MAX_POOL_SIZE:10}
+      minimum-idle: ${SPRING_DATASOURCE_MIN_IDLE:2}
   jpa:
     hibernate:
       ddl-auto: validate
     open-in-view: false
     properties:
       hibernate:
-        format_sql: true
         jdbc.time_zone: UTC
   flyway:
     enabled: true
   mail:
-    host: localhost
-    port: 1025
+    host: ${SPRING_MAIL_HOST:}
+    port: ${SPRING_MAIL_PORT:1025}
   servlet:
     multipart:
-      max-file-size: ${ARQLY_MAX_FILE_SIZE:100MB}
-      max-request-size: ${ARQLY_MAX_REQUEST_SIZE:500MB}
+      max-file-size: ${ARQLY_MAX_FILE_SIZE:104857600B}
+      max-request-size: ${ARQLY_MAX_REQUEST_SIZE:524288000B}
 
 server:
   port: ${SERVER_PORT:8080}
+  forward-headers-strategy: framework
+  error:
+    include-message: never
+    include-stacktrace: never
+    include-binding-errors: never
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+      probes:
+        enabled: true
+  health:
+    mail:
+      enabled: false
 
 arqly:
   security:
-    platform-secret: ${ARQLY_PLATFORM_JWT_SECRET:change-me-platform-secret-change-me-platform-secret}
-    tenant-secret: ${ARQLY_TENANT_JWT_SECRET:change-me-tenant-secret-change-me-tenant-secret}
-    issuer: arqly
-    access-token-minutes: 120
-  bootstrap:
-    platform-email: ${ARQLY_PLATFORM_EMAIL:admin@arqly.local}
-    platform-password: ${ARQLY_PLATFORM_PASSWORD:Admin@12345}
+    platform-secret: ${ARQLY_PLATFORM_JWT_SECRET}
+    tenant-secret: ${ARQLY_TENANT_JWT_SECRET}
+    issuer: ${ARQLY_JWT_ISSUER:arqly}
+    access-token-minutes: ${ARQLY_ACCESS_TOKEN_MINUTES:30}
+  initial-bootstrap:
+    enabled: ${ARQLY_INITIAL_BOOTSTRAP_ENABLED:false}
+    admin-name: ${ARQLY_INITIAL_ADMIN_NAME:}
+    admin-email: ${ARQLY_INITIAL_ADMIN_EMAIL:}
+    admin-password: ${ARQLY_INITIAL_ADMIN_PASSWORD:}
   storage:
-    local-root: ${ARQLY_STORAGE_LOCAL_ROOT:./storage}
+    local-root: ${APP_STORAGE_PATH}
+  web:
+    allowed-origins: ${APP_ALLOWED_ORIGINS}
+  public:
+    website-url: ${APP_PUBLIC_WEBSITE_URL}
+    frontend-url: ${APP_PUBLIC_FRONTEND_URL}
+    backend-url: ${APP_PUBLIC_BACKEND_URL}
 
 logging:
+  pattern:
+    console: "%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %-5level [%X{requestId:-}] %logger{36} - %msg%n"
   level:
+    root: INFO
     com.arqly: INFO

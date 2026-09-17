@@ -5,7 +5,7 @@ import { tap } from 'rxjs';
 import { ThemeService } from '../theme/theme.service';
 import { ApiResponse, AuthResponse, AuthScope } from './auth.models';
 
-const API_URL = 'http://localhost:8080/api';
+const API_URL = '/api';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {

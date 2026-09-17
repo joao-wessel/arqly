@@ -51,7 +51,7 @@ public class JwtService {
     }
 
     private Claims parse(String token, SecretKey key) {
-        return Jwts.parser().verifyWith(key).build().parseSignedClaims(token).getPayload();
+        return Jwts.parser().verifyWith(key).requireIssuer(properties.issuer()).build().parseSignedClaims(token).getPayload();
     }
 
     private SecretKey key(String secret) {

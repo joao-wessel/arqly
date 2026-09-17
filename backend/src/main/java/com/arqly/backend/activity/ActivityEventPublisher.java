@@ -42,4 +42,10 @@ public class ActivityEventPublisher {
                 null, null, authorId, authorName, type, ActivityVisibility.CLIENT_VISIBLE,
                 title, description, metadata));
     }
+
+    public void publishDiary(UUID tenantId, UUID projectId, UUID phaseId, UUID stageId, UUID authorId, String authorName,
+                             ActivityType type, ActivityVisibility visibility, String title, String description, String metadata) {
+        publisher.publishEvent(new ActivityRequestedEvent(tenantId, projectId, null, null, null, phaseId, stageId, authorId,
+                authorName, type, visibility, title, description, metadata));
+    }
 }

@@ -4,19 +4,23 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve --host 0.0.0.0",
-    "build": "ng build"
+    "build": "ng build",
+    "test": "ng test"
   },
   "private": true,
   "dependencies": {
-    "@angular/animations": "^20.0.0",
-    "@angular/common": "^20.0.0",
-    "@angular/compiler": "^20.0.0",
-    "@angular/core": "^20.0.0",
-    "@angular/forms": "^20.0.0",
-    "@angular/platform-browser": "^20.0.0",
-    "@angular/router": "^20.0.0",
+    "@angular/animations": "^20.3.28",
+    "@angular/common": "^20.3.28",
+    "@angular/compiler": "^20.3.28",
+    "@angular/core": "^20.3.28",
+    "@angular/forms": "^20.3.28",
+    "@angular/platform-browser": "^20.3.28",
+    "@angular/router": "^20.3.28",
     "@fullcalendar/angular": "^6.1.15",
     "@fullcalendar/daygrid": "^6.1.15",
+    "@fullcalendar/interaction": "^6.1.21",
+    "@fullcalendar/list": "^6.1.21",
+    "@fullcalendar/timegrid": "^6.1.21",
     "@types/turndown": "^5.0.6",
     "apexcharts": "^5.3.2",
     "lucide-angular": "^1.0.0",
@@ -28,12 +32,14 @@
     "zone.js": "^0.15.0"
   },
   "devDependencies": {
-    "@angular/build": "^20.0.0",
-    "@angular/cli": "^20.0.0",
-    "@angular/compiler-cli": "^20.0.0",
+    "@angular/build": "^20.3.28",
+    "@angular/cli": "^20.3.28",
+    "@angular/compiler-cli": "^20.3.28",
     "autoprefixer": "^10.4.20",
+    "jsdom": "^26.1.0",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.17",
-    "typescript": "~5.8.0"
+    "typescript": "~5.8.0",
+    "vitest": "^3.2.7"
   }
 }

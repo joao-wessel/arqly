@@ -221,7 +221,7 @@ export class PlatformUsersComponent implements OnInit {
   }
 
   load() {
-    this.http.get<ApiResponse<Page<PlatformUser>>>('http://localhost:8080/api/platform/users')
+    this.http.get<ApiResponse<Page<PlatformUser>>>('/api/platform/users')
       .subscribe((response) => this.users.set(response.data.content));
   }
 
@@ -251,8 +251,8 @@ export class PlatformUsersComponent implements OnInit {
     }
     const user = this.editingUser();
     const request = user
-      ? this.http.put<ApiResponse<PlatformUser>>(`http://localhost:8080/api/platform/users/${user.id}`, this.userForm.getRawValue())
-      : this.http.post<ApiResponse<PlatformUser>>('http://localhost:8080/api/platform/users', this.userForm.getRawValue());
+      ? this.http.put<ApiResponse<PlatformUser>>(`/api/platform/users/${user.id}`, this.userForm.getRawValue())
+      : this.http.post<ApiResponse<PlatformUser>>('/api/platform/users', this.userForm.getRawValue());
     request.subscribe({
       next: () => {
         this.closeUserModal();
@@ -275,7 +275,7 @@ export class PlatformUsersComponent implements OnInit {
   deleteUser() {
     const user = this.selectedUser();
     if (!user) return;
-    this.http.delete(`http://localhost:8080/api/platform/users/${user.id}`).subscribe({
+    this.http.delete(`/api/platform/users/${user.id}`).subscribe({
       next: () => {
         this.closeDeleteModal();
         this.load();

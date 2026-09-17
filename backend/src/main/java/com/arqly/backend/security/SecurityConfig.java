@@ -19,6 +19,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
 
 @Configuration
 @EnableConfigurationProperties(SecurityProperties.class)
@@ -34,6 +35,10 @@ public class SecurityConfig {
         return http.securityMatcher("/api/platform/**", "/api/auth/platform/**")
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(Customizer.withDefaults())
+                .headers(headers -> headers
+                        .frameOptions(frame -> frame.sameOrigin())
+                        .referrerPolicy(policy -> policy.policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN))
+                        .httpStrictTransportSecurity(hsts -> hsts.includeSubDomains(true).maxAgeInSeconds(31_536_000)))
                 .sessionManagement(session -> session.sessionCreationPolicy(STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/platform/login", "/api/auth/platform/forgot-password", "/api/auth/platform/reset-password").permitAll()
@@ -45,13 +50,18 @@ public class SecurityConfig {
     @Bean
     @Order(2)
     SecurityFilterChain tenantSecurity(HttpSecurity http, JwtService jwtService) throws Exception {
-        return http.securityMatcher("/api/tenant/**", "/api/auth/tenant/**")
+        return http.securityMatcher("/api/tenant/**", "/api/calendar/**", "/api/notifications/**", "/api/financial/**", "/api/search/**", "/api/auth/tenant/**")
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(Customizer.withDefaults())
+                .headers(headers -> headers
+                        .frameOptions(frame -> frame.sameOrigin())
+                        .referrerPolicy(policy -> policy.policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN))
+                        .httpStrictTransportSecurity(hsts -> hsts.includeSubDomains(true).maxAgeInSeconds(31_536_000)))
                 .sessionManagement(session -> session.sessionCreationPolicy(STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/tenant/login", "/api/auth/tenant/forgot-password", "/api/auth/tenant/reset-password", "/api/auth/tenant/first-access").permitAll()
                         .requestMatchers("/api/tenant/users/**").hasRole("TENANT_ADMIN")
+                        .requestMatchers("/api/financial/**").hasRole("TENANT_ADMIN")
                         .anyRequest().hasAnyRole("TENANT_ADMIN", "USER"))
                 .addFilterBefore(new JwtAuthenticationFilter(jwtService::parseTenant), UsernamePasswordAuthenticationFilter.class)
                 .build();
@@ -62,8 +72,13 @@ public class SecurityConfig {
     SecurityFilterChain publicSecurity(HttpSecurity http) throws Exception {
         return http.csrf(AbstractHttpConfigurer::disable)
                 .cors(Customizer.withDefaults())
+                .headers(headers -> headers
+                        .frameOptions(frame -> frame.sameOrigin())
+                        .referrerPolicy(policy -> policy.policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN))
+                        .httpStrictTransportSecurity(hsts -> hsts.includeSubDomains(true).maxAgeInSeconds(31_536_000)))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/actuator/health").permitAll()
+                        .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
+                        .requestMatchers("/actuator/**").denyAll()
                         .anyRequest().permitAll())
                 .build();
     }

@@ -6,6 +6,8 @@ import com.arqly.backend.entity.FileResource;
 import com.arqly.backend.entity.FileResourceStatus;
 import com.arqly.backend.mapper.FileMapper;
 import com.arqly.backend.repository.FileResourceRepository;
+import com.arqly.backend.repository.ConstructionDiaryEntryRepository;
+import com.arqly.backend.repository.ProjectStageRepository;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
 import java.util.ArrayList;
@@ -23,23 +25,29 @@ public class FileSearchService {
     private final FileResourceRepository repository;
     private final FileMapper mapper;
     private final FileOwnershipService ownershipService;
+    private final ProjectStageRepository stageRepository;
+    private final ConstructionDiaryEntryRepository diaryRepository;
 
-    public FileSearchService(FileResourceRepository repository, FileMapper mapper, FileOwnershipService ownershipService) {
+    public FileSearchService(FileResourceRepository repository, FileMapper mapper, FileOwnershipService ownershipService,
+                             ProjectStageRepository stageRepository, ConstructionDiaryEntryRepository diaryRepository) {
         this.repository = repository;
         this.mapper = mapper;
         this.ownershipService = ownershipService;
+        this.stageRepository = stageRepository;
+        this.diaryRepository = diaryRepository;
     }
 
     @Transactional(readOnly = true)
-    public Page<FileResponse> search(UUID tenantId, FileOwnerType ownerType, UUID ownerId, UUID folderId,
+    public Page<FileResponse> search(UUID tenantId, FileOwnerType ownerType, UUID ownerId, UUID projectId, UUID folderId,
                                      Boolean rootOnly, String search, String extension, String author,
                                      String tag, FileResourceStatus status, Pageable pageable) {
         if (ownerId != null && ownerType == null) {
             throw new com.arqly.backend.exception.BusinessException("Informe o tipo do proprietário do arquivo.");
         }
         if (ownerType != null && ownerId != null) ownershipService.validate(tenantId, ownerType, ownerId);
+        if (projectId != null) ownershipService.validate(tenantId, FileOwnerType.PROJECT, projectId);
         return repository.findAll(specification(tenantId, ownerType, ownerId, folderId, rootOnly, search,
-                extension, author, tag, status), pageable).map(this::response);
+                extension, author, tag, status, projectId), pageable).map(this::response);
     }
 
     public boolean previewAvailable(FileResource file) {
@@ -58,13 +66,23 @@ public class FileSearchService {
     private Specification<FileResource> specification(UUID tenantId, FileOwnerType ownerType, UUID ownerId,
                                                        UUID folderId, Boolean rootOnly, String search,
                                                        String extension, String author, String tag,
-                                                       FileResourceStatus status) {
+                                                       FileResourceStatus status, UUID projectId) {
         return (root, query, builder) -> {
             var predicates = new ArrayList<Predicate>();
             predicates.add(builder.equal(root.get("tenant").get("id"), tenantId));
             predicates.add(builder.equal(root.get("status"), status == null ? FileResourceStatus.ACTIVE : status));
-            if (ownerType != null) predicates.add(builder.equal(root.get("ownerType"), ownerType));
-            if (ownerId != null) predicates.add(builder.equal(root.get("ownerId"), ownerId));
+            if (projectId != null) {
+                var related = new ArrayList<Predicate>();
+                related.add(builder.and(builder.equal(root.get("ownerType"), FileOwnerType.PROJECT), builder.equal(root.get("ownerId"), projectId)));
+                var stageIds = stageRepository.findAllByProjectIdOrdered(projectId, tenantId).stream().map(stage -> stage.getId()).toList();
+                if (!stageIds.isEmpty()) related.add(builder.and(builder.equal(root.get("ownerType"), FileOwnerType.PROJECT_STAGE), root.get("ownerId").in(stageIds)));
+                var diaryIds = diaryRepository.findAllByProjectIdAndTenantIdAndDeletedFalseOrderByEntryDateDescCreatedAtDesc(projectId, tenantId).stream().map(entry -> entry.getId()).toList();
+                if (!diaryIds.isEmpty()) related.add(builder.and(builder.equal(root.get("ownerType"), FileOwnerType.CONSTRUCTION_DIARY_ENTRY), root.get("ownerId").in(diaryIds)));
+                predicates.add(builder.or(related.toArray(Predicate[]::new)));
+            } else {
+                if (ownerType != null) predicates.add(builder.equal(root.get("ownerType"), ownerType));
+                if (ownerId != null) predicates.add(builder.equal(root.get("ownerId"), ownerId));
+            }
             if (folderId != null) predicates.add(builder.equal(root.get("folder").get("id"), folderId));
             else if (Boolean.TRUE.equals(rootOnly)) predicates.add(builder.isNull(root.get("folder")));
             if (search != null && !search.isBlank()) {

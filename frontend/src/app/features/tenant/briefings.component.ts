@@ -402,7 +402,7 @@ export class BriefingsComponent implements OnInit {
   private readonly http = inject(HttpClient);
   private readonly fb = inject(FormBuilder);
   private readonly toast = inject(ToastService);
-  private readonly baseUrl = 'http://localhost:8080/api/tenant/briefings';
+  private readonly baseUrl = '/api/tenant/briefings';
 
   readonly briefings = signal<BriefingSummary[]>([]);
   readonly clients = signal<ClientOption[]>([]);
@@ -476,11 +476,11 @@ export class BriefingsComponent implements OnInit {
   }
 
   loadOptions() {
-    this.http.get<ApiResponse<Page<ClientOption>>>('http://localhost:8080/api/tenant/clients?size=200&sort=name,asc')
+    this.http.get<ApiResponse<Page<ClientOption>>>('/api/tenant/clients?size=200&sort=name,asc')
       .subscribe((response) => this.clients.set(response.data.content));
-    this.http.get<ApiResponse<ProjectTemplateOption[]>>('http://localhost:8080/api/tenant/projects/templates/options')
+    this.http.get<ApiResponse<ProjectTemplateOption[]>>('/api/tenant/projects/templates/options')
       .subscribe((response) => this.templates.set(response.data));
-    this.http.get<ApiResponse<Page<TenantUserOption>>>('http://localhost:8080/api/tenant/users?size=200&sort=name,asc')
+    this.http.get<ApiResponse<Page<TenantUserOption>>>('/api/tenant/users?size=200&sort=name,asc')
       .subscribe((response) => this.users.set(response.data.content));
   }
 

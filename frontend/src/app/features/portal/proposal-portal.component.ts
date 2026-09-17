@@ -241,7 +241,7 @@ export class ProposalPortalComponent implements OnInit {
   load() {
     const token = this.route.snapshot.paramMap.get('token');
     const proposalId = this.route.snapshot.paramMap.get('proposalId');
-    this.http.get<ApiResponse<PortalProposal>>(`http://localhost:8080/api/portal/${token}/proposals/${proposalId}`)
+    this.http.get<ApiResponse<PortalProposal>>(`/api/portal/${token}/proposals/${proposalId}`)
       .subscribe({
         next: (response) => this.portal.set(response.data),
         error: () => this.portal.set(null)
@@ -273,7 +273,7 @@ export class ProposalPortalComponent implements OnInit {
   decide(action: PortalDecision, message: string) {
     const token = this.route.snapshot.paramMap.get('token');
     const proposalId = this.route.snapshot.paramMap.get('proposalId');
-    this.http.post<ApiResponse<unknown>>(`http://localhost:8080/api/portal/${token}/proposals/${proposalId}/${action}`, {})
+    this.http.post<ApiResponse<unknown>>(`/api/portal/${token}/proposals/${proposalId}/${action}`, {})
       .subscribe({
         next: () => {
           this.closeDecisionModal();

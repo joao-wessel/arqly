@@ -45,12 +45,13 @@ export class FilesComponent {
     PROPOSAL: '/app/proposals',
     PROJECT: '/app/projects',
     PROJECT_STAGE: '/app/projects',
+    CONSTRUCTION_DIARY_ENTRY: '/app/construction-diary',
     DOCUMENT: '/app/documents/generated',
     TENANT: '/app/files'
   })[this.ownerType()];
 
   private ownerTypeLabel(type: FileOwnerType) {
-    return ({ BRIEFING: 'briefing', PROPOSAL: 'proposta', PROJECT: 'projeto', PROJECT_STAGE: 'etapa',
+    return ({ BRIEFING: 'briefing', PROPOSAL: 'proposta', PROJECT: 'projeto', PROJECT_STAGE: 'etapa', CONSTRUCTION_DIARY_ENTRY: 'registro do Diário',
       DOCUMENT: 'documento', TENANT: 'escritório' })[type];
   }
 }

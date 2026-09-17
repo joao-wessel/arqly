@@ -339,7 +339,7 @@ export class TenantsComponent implements OnInit {
   }
 
   load() {
-    this.http.get<ApiResponse<Page<Tenant>>>('http://localhost:8080/api/platform/tenants')
+    this.http.get<ApiResponse<Page<Tenant>>>('/api/platform/tenants')
       .subscribe((response) => this.tenants.set(response.data.content));
   }
 
@@ -375,8 +375,8 @@ export class TenantsComponent implements OnInit {
     }
     const tenant = this.editingTenant();
     const request = tenant
-      ? this.http.put<ApiResponse<Tenant>>(`http://localhost:8080/api/platform/tenants/${tenant.id}`, this.tenantForm.getRawValue())
-      : this.http.post<ApiResponse<Tenant>>('http://localhost:8080/api/platform/tenants', this.tenantForm.getRawValue());
+      ? this.http.put<ApiResponse<Tenant>>(`/api/platform/tenants/${tenant.id}`, this.tenantForm.getRawValue())
+      : this.http.post<ApiResponse<Tenant>>('/api/platform/tenants', this.tenantForm.getRawValue());
     request.subscribe({
       next: () => {
         this.closeTenantModal();
@@ -408,7 +408,7 @@ export class TenantsComponent implements OnInit {
     if (!tenant) return;
     const email = this.firstAccessForm.getRawValue().email;
     const name = email.split('@')[0].replace(/[._-]+/g, ' ') || 'Administrador';
-    this.http.post<ApiResponse<{ firstAccessUrl: string }>>(`http://localhost:8080/api/platform/tenants/${tenant.id}/admins`, {
+    this.http.post<ApiResponse<{ firstAccessUrl: string }>>(`/api/platform/tenants/${tenant.id}/admins`, {
       name,
       email
     }).subscribe({
@@ -432,7 +432,7 @@ export class TenantsComponent implements OnInit {
   deleteTenant() {
     const tenant = this.selectedTenant();
     if (!tenant) return;
-    this.http.delete(`http://localhost:8080/api/platform/tenants/${tenant.id}`).subscribe({
+    this.http.delete(`/api/platform/tenants/${tenant.id}`).subscribe({
       next: () => {
         this.closeDeleteModal();
         this.load();

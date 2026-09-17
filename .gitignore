@@ -3,5 +3,8 @@
 **/.angular/
 **/target/
 *.log
+backups/
+.backup-test/
 .env
 .env.*
+!.env.example

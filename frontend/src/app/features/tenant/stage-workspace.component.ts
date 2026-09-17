@@ -242,9 +242,11 @@ interface StageWorkspace {
 
           @if (activeTab() === 'diary') {
             <div class="p-5">
-              <div class="rounded-3xl border border-dashed border-slate-300 bg-slate-50/70 py-16 text-center">
-                <lucide-icon class="mx-auto text-slate-400" name="ClipboardList" size="34"></lucide-icon>
-                <p class="mt-4 font-extrabold">O Diário de Obra estará disponível em breve.</p>
+              <div class="rounded-3xl border border-dashed border-slate-300 bg-slate-50/70 p-8 text-center">
+                <lucide-icon class="mx-auto text-arqly-700" name="ClipboardList" size="34"></lucide-icon>
+                <p class="mt-4 font-extrabold">Registros vinculados a esta etapa</p>
+                <p class="mt-2 text-sm text-slate-500">Abra o Diário de Obra para registrar visitas, ocorrências, decisões e fotos desta etapa.</p>
+                <a class="btn-primary mt-5" [routerLink]="['/app/construction-diary']" [queryParams]="{projectId: stage.project.id, stageId: stage.id}">Abrir Diário de Obra</a>
               </div>
             </div>
           }
@@ -260,7 +262,7 @@ export class StageWorkspaceComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly route = inject(ActivatedRoute);
   private readonly toast = inject(ToastService);
-  private readonly baseUrl = 'http://localhost:8080/api/tenant/stage-workspaces';
+  private readonly baseUrl = '/api/tenant/stage-workspaces';
 
   readonly workspace = signal<StageWorkspace | null>(null);
   readonly activeTab = signal<WorkspaceTab>('summary');
@@ -329,7 +331,7 @@ export class StageWorkspaceComponent implements OnInit {
   }
 
   loadUsers() {
-    this.http.get<ApiResponse<Page<TenantUserOption>>>('http://localhost:8080/api/tenant/users?size=200&sort=name,asc')
+    this.http.get<ApiResponse<Page<TenantUserOption>>>('/api/tenant/users?size=200&sort=name,asc')
       .subscribe((response) => this.tenantUsers.set(response.data.content));
   }
 

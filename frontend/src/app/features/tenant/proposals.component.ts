@@ -1,4 +1,4 @@
-import { DatePipe, DecimalPipe } from '@angular/common';
+import { CurrencyPipe, DatePipe, DecimalPipe } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -15,7 +15,7 @@ type ProposalStatus = 'DRAFT' | 'SENT' | 'VIEWED' | 'ACCEPTED' | 'REJECTED' | 'E
 type BillingUnit = 'UN' | 'M2' | 'M' | 'HOUR' | 'DAY' | 'MONTH' | 'PROJECT' | 'VISIT' | 'OTHER';
 type OriginType = 'MANUAL' | 'BRIEFING' | 'PROPOSAL';
 type ProposalTab = 'data' | 'services' | 'payments' | 'notes' | 'summary' | 'documents';
-type ProposalConfirmAction = 'send' | 'delete' | 'createProject';
+type ProposalConfirmAction = 'send' | 'delete' | 'createProject' | 'generateFinancial';
 
 interface Page<T> {
   content: T[];
@@ -126,7 +126,7 @@ interface ProposalStats {
 @Component({
   selector: 'app-proposals',
   standalone: true,
-  imports: [ReactiveFormsModule, DatePipe, DecimalPipe, LucideAngularModule, RouterLink, ArqlySelectComponent, ArqlyDatePickerComponent, ArqlyCurrencyInputComponent, ContextDocumentsComponent],
+  imports: [ReactiveFormsModule, CurrencyPipe, DatePipe, DecimalPipe, LucideAngularModule, RouterLink, ArqlySelectComponent, ArqlyDatePickerComponent, ArqlyCurrencyInputComponent, ContextDocumentsComponent],
   template: `
     <section class="space-y-5">
       <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
@@ -226,6 +226,9 @@ interface ProposalStats {
                       }
                       @if (proposal.status === 'ACCEPTED' && !proposal.projectCreated) {
                         <button class="btn-secondary px-3 py-2" type="button" (click)="openConfirmModal('createProject', proposal)">Criar projeto</button>
+                      }
+                      @if (proposal.status === 'ACCEPTED') {
+                        <button class="btn-secondary px-3 py-2" type="button" title="Gerar financeiro" (click)="openConfirmModal('generateFinancial', proposal)"><lucide-icon name="CreditCard" size="16"></lucide-icon></button>
                       }
                     </div>
                   </td>
@@ -554,6 +557,13 @@ interface ProposalStats {
             <p class="mt-2 font-extrabold text-slate-900">{{ selectedProposal()?.number }}</p>
             <p class="mt-1 text-sm text-slate-500">{{ selectedProposal()?.title }}</p>
           </div>
+          @if (confirmAction() === 'generateFinancial' && financialPreview()) {
+            <div class="rounded-2xl border border-slate-200 p-4">
+              <p class="text-xs font-extrabold uppercase tracking-[0.18em] text-arqly-700">Pré-visualização financeira</p>
+              <p class="mt-2 text-sm text-slate-600">{{ financialPreview()?.clientName }} · {{ financialPreview()?.total | currency:'BRL' }}</p>
+              <div class="mt-3 space-y-2 text-sm">@for (item of financialPreview()?.installments || []; track $index) {<div class="flex justify-between"><span>{{ item.description }} · {{ item.dueDate | date:'dd/MM/yyyy' }}</span><strong>{{ item.amount | currency:'BRL' }}</strong></div>}</div>
+            </div>
+          }
           @if (confirmAction() === 'createProject') {
             <form class="grid gap-3" [formGroup]="projectCreateForm">
               <label class="space-y-1">
@@ -602,7 +612,7 @@ export class ProposalsComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly http = inject(HttpClient);
   private readonly toast = inject(ToastService);
-  private readonly baseUrl = 'http://localhost:8080/api/tenant/proposals';
+  private readonly baseUrl = '/api/tenant/proposals';
 
   readonly proposals = signal<ProposalSummary[]>([]);
   readonly clients = signal<ClientOption[]>([]);
@@ -625,6 +635,7 @@ export class ProposalsComponent implements OnInit {
   readonly confirmModalOpen = signal(false);
   readonly confirmAction = signal<ProposalConfirmAction>('send');
   readonly selectedProposal = signal<ProposalSummary | null>(null);
+  readonly financialPreview = signal<any | null>(null);
   readonly projectCreateForm = this.fb.nonNullable.group({
     name: ['', Validators.required],
     templateId: [''],
@@ -725,15 +736,15 @@ export class ProposalsComponent implements OnInit {
   }
 
   loadOptions() {
-    this.http.get<ApiResponse<Page<ClientOption>>>('http://localhost:8080/api/tenant/clients?page=0&size=200&sort=createdAt,desc')
+    this.http.get<ApiResponse<Page<ClientOption>>>('/api/tenant/clients?page=0&size=200&sort=createdAt,desc')
       .subscribe((response) => this.clients.set(response.data.content));
-    this.http.get<ApiResponse<Page<BriefingOption>>>('http://localhost:8080/api/tenant/briefings?page=0&size=200&sort=createdAt,desc')
+    this.http.get<ApiResponse<Page<BriefingOption>>>('/api/tenant/briefings?page=0&size=200&sort=createdAt,desc')
       .subscribe((response) => this.briefings.set(response.data.content));
-    this.http.get<ApiResponse<Page<CatalogService>>>('http://localhost:8080/api/tenant/service-catalog/services?page=0&size=200&sort=name,asc&active=true')
+    this.http.get<ApiResponse<Page<CatalogService>>>('/api/tenant/service-catalog/services?page=0&size=200&sort=name,asc&active=true')
       .subscribe((response) => this.services.set(response.data.content));
-    this.http.get<ApiResponse<ProjectTemplateOption[]>>('http://localhost:8080/api/tenant/projects/templates/options')
+    this.http.get<ApiResponse<ProjectTemplateOption[]>>('/api/tenant/projects/templates/options')
       .subscribe((response) => this.projectTemplates.set(response.data));
-    this.http.get<ApiResponse<Page<TenantUserOption>>>('http://localhost:8080/api/tenant/users?size=200&sort=name,asc')
+    this.http.get<ApiResponse<Page<TenantUserOption>>>('/api/tenant/users?size=200&sort=name,asc')
       .subscribe((response) => this.tenantUsers.set(response.data.content));
   }
 
@@ -923,6 +934,8 @@ export class ProposalsComponent implements OnInit {
   openConfirmModal(action: ProposalConfirmAction, proposal: ProposalSummary) {
     this.confirmAction.set(action);
     this.selectedProposal.set(proposal);
+    this.financialPreview.set(null);
+    if (action === 'generateFinancial') this.http.get<ApiResponse<any>>(`/api/financial/proposals/${proposal.id}/preview`).subscribe({ next: response => this.financialPreview.set(response.data), error: error => { this.confirmModalOpen.set(false); this.toast.error(error?.error?.message || 'Não foi possível preparar o financeiro.'); } });
     if (action === 'createProject') {
       this.projectCreateForm.reset({
         name: proposal.title,
@@ -948,6 +961,7 @@ export class ProposalsComponent implements OnInit {
       send: 'Enviar proposta',
       delete: 'Excluir proposta',
       createProject: 'Criar projeto'
+      ,generateFinancial: 'Gerar financeiro'
     }[this.confirmAction()];
   }
 
@@ -956,6 +970,7 @@ export class ProposalsComponent implements OnInit {
       send: 'O cliente receberá a proposta por e-mail e poderá visualizar, aceitar ou recusar pelo portal. É necessário ter um acesso ativo ao portal do cliente.',
       delete: 'Essa ação remove o rascunho da lista. Propostas enviadas, aceitas ou convertidas não podem ser excluídas.',
       createProject: 'Um novo projeto será criado a partir da proposta aceita, mantendo o vínculo comercial registrado.'
+      ,generateFinancial: 'As condições de pagamento desta proposta serão transformadas em uma conta a receber. Esta operação só pode ser feita uma vez.'
     }[this.confirmAction()];
   }
 
@@ -964,6 +979,7 @@ export class ProposalsComponent implements OnInit {
       send: 'Send',
       delete: 'Trash2',
       createProject: 'FolderPlus'
+      ,generateFinancial: 'CreditCard'
     }[this.confirmAction()];
   }
 
@@ -972,6 +988,7 @@ export class ProposalsComponent implements OnInit {
       send: 'Enviar proposta',
       delete: 'Excluir',
       createProject: 'Criar projeto'
+      ,generateFinancial: 'Gerar financeiro'
     }[this.confirmAction()];
   }
 
@@ -989,6 +1006,10 @@ export class ProposalsComponent implements OnInit {
         return;
       }
       this.createProject(proposal);
+      return;
+    }
+    if (this.confirmAction() === 'generateFinancial') {
+      this.generateFinancial(proposal);
       return;
     }
     this.deleteProposal(proposal);
@@ -1027,7 +1048,7 @@ export class ProposalsComponent implements OnInit {
 
   createProject(proposal: ProposalSummary) {
     const value = this.projectCreateForm.getRawValue();
-    this.http.post<ApiResponse<unknown>>(`http://localhost:8080/api/tenant/projects/from-proposal/${proposal.id}`, {
+    this.http.post<ApiResponse<unknown>>(`/api/tenant/projects/from-proposal/${proposal.id}`, {
       ...value,
       templateId: value.templateId || null,
       startDate: value.startDate || null,
@@ -1042,6 +1063,13 @@ export class ProposalsComponent implements OnInit {
         this.toast.success('Projeto criado', 'O vínculo com a proposta foi registrado.');
       },
       error: () => this.toast.error('Não foi possível criar o projeto')
+    });
+  }
+
+  generateFinancial(proposal: ProposalSummary) {
+    this.http.post<ApiResponse<unknown>>(`/api/financial/proposals/${proposal.id}/generate`, {}).subscribe({
+      next: () => { this.closeConfirmModal(); this.toast.success('Financeiro gerado', 'As parcelas foram criadas a partir da proposta.'); },
+      error: (error) => this.toast.error('Não foi possível gerar o financeiro', error?.error?.message || 'Verifique se a proposta já possui lançamento financeiro.')
     });
   }
 
@@ -1074,7 +1102,7 @@ export class ProposalsComponent implements OnInit {
 
   applyBriefingDefaults(id: string) {
     if (!id || this.readOnly()) return;
-    this.http.get<ApiResponse<any>>(`http://localhost:8080/api/tenant/briefings/${id}`).subscribe((response) => {
+    this.http.get<ApiResponse<any>>(`/api/tenant/briefings/${id}`).subscribe((response) => {
       const briefing = response.data;
       const requirements = (briefing.requirements || []).map((item: any) => item.description).filter(Boolean);
       const scope = [

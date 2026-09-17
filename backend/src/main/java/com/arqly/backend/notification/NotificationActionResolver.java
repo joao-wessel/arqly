@@ -1,0 +1,3 @@
+package com.arqly.backend.notification;
+import com.arqly.backend.entity.*;import java.util.*;import org.springframework.stereotype.Component;
+@Component public class NotificationActionResolver {public String resolve(NotificationSourceType type,UUID projectId,UUID sourceId){return switch(type){case PROJECT->projectId==null?"/app/projects":"/app/projects/"+projectId;case PROJECT_STAGE->"/app/projects/"+projectId+"/stages/"+sourceId;case APPROVAL->"/app/projects/"+projectId;case CONSTRUCTION_DIARY,DIARY_OCCURRENCE->"/app/construction-diary/"+sourceId;case CALENDAR_EVENT->"/app/calendar?event="+sourceId;default->"/app/dashboard";};}}

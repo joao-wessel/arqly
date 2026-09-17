@@ -52,22 +52,22 @@ import { VersionHistoryComponent } from './version-history.component';
         </aside>
 
         <div class="min-w-0">
-          <div class="hidden overflow-x-auto md:block">
-            <table class="w-full min-w-[1080px] text-left text-sm">
-              <thead class="bg-slate-50 text-xs uppercase text-slate-500"><tr><th class="px-6 py-4">Arquivo</th><th class="px-6 py-4">Contexto</th><th class="px-6 py-4">Pasta</th><th class="px-6 py-4">Versão</th><th class="px-6 py-4">Tamanho</th><th class="px-6 py-4">Autor</th><th class="px-6 py-4">Atualizado</th><th class="px-6 py-4 text-right">Ações</th></tr></thead>
+          <div class="hidden min-w-0 md:block">
+            <table class="w-full table-fixed text-left text-sm">
+              <thead class="bg-slate-50 text-xs uppercase text-slate-500"><tr><th class="px-4 py-4">Arquivo</th>@if (browseAll) {<th class="hidden px-4 py-4 xl:table-cell">Contexto</th>}<th class="hidden px-4 py-4 xl:table-cell">Pasta</th><th class="w-16 px-3 py-4">Versão</th><th class="w-20 px-3 py-4">Tamanho</th><th class="hidden w-28 px-3 py-4 xl:table-cell">Autor</th><th class="hidden w-36 px-3 py-4 xl:table-cell">Atualizado</th><th class="w-32 px-3 py-4 text-right">Ações</th></tr></thead>
               <tbody>
                 @for (file of files(); track file.id) {
                   <tr class="border-t border-slate-100">
-                    <td class="px-6 py-4"><div class="flex items-center gap-3"><span class="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-arqly-50 text-arqly-700"><lucide-icon [name]="fileIcon(file)" size="18" /></span><div class="min-w-0"><p class="max-w-xs truncate font-bold">{{ file.name }}</p><p class="mt-1 text-xs uppercase text-slate-400">{{ file.extension || 'arquivo' }} · {{ visibilityLabel(file.visibility) }}</p></div></div></td>
-                    <td class="px-6 py-4"><p class="max-w-48 truncate font-bold">{{ file.ownerLabel }}</p><p class="mt-1 text-xs text-slate-400">{{ ownerTypeLabel(file.ownerType) }}</p></td>
-                    <td class="px-6 py-4 text-slate-500">{{ file.folderName || 'Raiz' }}</td>
-                    <td class="px-6 py-4 font-bold">v{{ file.version }}</td>
-                    <td class="px-6 py-4 text-slate-500">{{ sizeLabel(file.size) }}</td>
-                    <td class="px-6 py-4">{{ file.uploadedByName }}</td>
-                    <td class="px-6 py-4 text-slate-500">{{ file.updatedAt | date:'dd/MM/yyyy HH:mm' }}</td>
-                    <td class="px-6 py-4"><div class="flex justify-end gap-2">@if (file.previewAvailable) {<button class="btn-secondary px-3 py-2" title="Visualizar" type="button" (click)="preview(file)"><lucide-icon name="Eye" size="15" /></button>}<button class="btn-secondary px-3 py-2" title="Baixar" type="button" (click)="download(file)"><lucide-icon name="Download" size="15" /></button><button class="btn-secondary px-3 py-2" type="button" (click)="openDetails(file)"><lucide-icon name="Search" size="15" />Ver</button></div></td>
-                  </tr>
-                } @empty {<tr><td colspan="8" class="px-6 py-14 text-center text-slate-500">Nenhum arquivo encontrado.</td></tr>}
+                    <td class="px-4 py-4"><div class="flex min-w-0 items-center gap-3"><span class="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-arqly-50 text-arqly-700"><lucide-icon [name]="fileIcon(file)" size="18" /></span><div class="min-w-0"><p class="truncate font-bold">{{ file.name }}</p><p class="mt-1 text-xs uppercase text-slate-400">{{ file.extension || 'arquivo' }} · {{ visibilityLabel(file.visibility) }}</p></div></div></td>
+                    @if (browseAll) {<td class="hidden px-4 py-4 xl:table-cell"><p class="truncate font-bold">{{ file.ownerLabel }}</p><p class="mt-1 text-xs text-slate-400">{{ ownerTypeLabel(file.ownerType) }}</p></td>}
+                    <td class="hidden px-4 py-4 text-slate-500 xl:table-cell">{{ file.folderName || 'Raiz' }}</td>
+                    <td class="px-3 py-4 font-bold">v{{ file.version }}</td>
+                    <td class="px-3 py-4 text-slate-500">{{ sizeLabel(file.size) }}</td>
+                    <td class="hidden px-3 py-4 xl:table-cell">{{ file.uploadedByName }}</td>
+                    <td class="hidden px-3 py-4 text-slate-500 xl:table-cell">{{ file.updatedAt | date:'dd/MM/yyyy HH:mm' }}</td>
+                    <td class="px-3 py-4"><div class="flex justify-end gap-1">@if (file.previewAvailable) {<button class="btn-secondary px-2.5 py-2" title="Visualizar" type="button" (click)="preview(file)"><lucide-icon name="Eye" size="15" /></button>}<button class="btn-secondary px-2.5 py-2" title="Baixar" type="button" (click)="download(file)"><lucide-icon name="Download" size="15" /></button><button class="btn-secondary px-2.5 py-2" title="Detalhes" type="button" (click)="openDetails(file)"><lucide-icon name="Search" size="15" /></button></div></td>
+                </tr>
+                } @empty {<tr><td [attr.colspan]="browseAll ? 8 : 7" class="px-4 py-14 text-center text-slate-500">Nenhum arquivo encontrado.</td></tr>}
               </tbody>
             </table>
           </div>
@@ -129,6 +129,7 @@ export class FileExplorerComponent implements OnChanges, OnDestroy {
   @Input() title = 'Arquivos';
   @Input() eyebrow = 'Gestão de arquivos';
   @Input() browseAll = false;
+  @Input() relatedProjectId?: string;
 
   private readonly api = inject(FileApiService);
   private readonly http = inject(HttpClient);
@@ -159,13 +160,14 @@ export class FileExplorerComponent implements OnChanges, OnDestroy {
   readonly filterForm = this.fb.nonNullable.group({ search: [''], extension: [''], author: [''], ownerType: [''], status: ['ACTIVE'] });
   readonly folderForm = this.fb.nonNullable.group({ name: ['', Validators.required] });
   readonly detailsForm = this.fb.nonNullable.group({ name: ['', Validators.required], folderId: [''], visibility: ['INTERNAL'], tags: [''] });
-  readonly statusOptions = [{ label: 'Ativos', value: 'ACTIVE' }, { label: 'Arquivados', value: 'ARCHIVED' }, { label: 'Excluídos', value: 'DELETED' }];
+  readonly statusOptions: { label: string; value: FileStatus }[] = [{ label: 'Ativos', value: 'ACTIVE' }, { label: 'Arquivados', value: 'ARCHIVED' }, { label: 'Excluídos', value: 'DELETED' }];
   readonly ownerTypeOptions = [
     { label: 'Todos os contextos', value: '' },
     { label: 'Briefings', value: 'BRIEFING' },
     { label: 'Propostas', value: 'PROPOSAL' },
     { label: 'Projetos', value: 'PROJECT' },
     { label: 'Etapas', value: 'PROJECT_STAGE' },
+    { label: 'Diário de Obra', value: 'CONSTRUCTION_DIARY_ENTRY' },
     { label: 'Documentos', value: 'DOCUMENT' },
     { label: 'Escritório', value: 'TENANT' }
   ];
@@ -257,7 +259,7 @@ export class FileExplorerComponent implements OnChanges, OnDestroy {
     const file = this.details();
     if (!file || !action) return;
     const request = action === 'archive' ? this.api.archive(file.id) : action === 'restore' ? this.api.restore(file.id) : this.api.delete(file.id);
-    request.subscribe({ next: () => { this.confirmAction.set(null); this.closeDetails(); this.reload(); this.toast.success('Ação concluída.'); }, error: () => this.toast.error('Não foi possível concluir a ação.') });
+    request.subscribe({ next: () => { this.confirmAction.set(null); this.closeDetails(); this.setStatus(action === 'archive' ? 'ARCHIVED' : action === 'restore' ? 'ACTIVE' : 'DELETED'); this.toast.success('Ação concluída.'); }, error: () => this.toast.error('Não foi possível concluir a ação.') });
   }
 
   preview(file: FileItem) {
@@ -289,10 +291,11 @@ export class FileExplorerComponent implements OnChanges, OnDestroy {
   fileIcon(file: FileItem) { return ['png', 'jpg', 'jpeg', 'webp', 'svg'].includes(file.extension) ? 'Image' : file.extension === 'pdf' ? 'FileText' : 'FileType'; }
   visibilityLabel(value: string) { return value === 'CLIENT_VISIBLE' ? 'Cliente' : 'Interno'; }
   ownerTypeLabel(value: FileOwnerType) {
-    return ({ BRIEFING: 'Briefing', PROPOSAL: 'Proposta', PROJECT: 'Projeto', PROJECT_STAGE: 'Etapa',
+    return ({ BRIEFING: 'Briefing', PROPOSAL: 'Proposta', PROJECT: 'Projeto', PROJECT_STAGE: 'Etapa', CONSTRUCTION_DIARY_ENTRY: 'Diário de Obra',
       DOCUMENT: 'Documento', TENANT: 'Escritório' })[value];
   }
   statusLabel(value: FileStatus) { return ({ ACTIVE: 'Ativo', ARCHIVED: 'Arquivado', DELETED: 'Excluído' })[value]; }
+  setStatus(status: FileStatus) { this.filterForm.controls.status.setValue(status); this.reload(); }
   sizeLabel(size: number) { if (size < 1024) return `${size} B`; if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`; if (size < 1024 * 1024 * 1024) return `${(size / 1024 / 1024).toFixed(1)} MB`; return `${(size / 1024 / 1024 / 1024).toFixed(1)} GB`; }
   private baseName(name: string) { const index = name.lastIndexOf('.'); return index > 0 ? name.substring(0, index) : name; }
 
@@ -304,8 +307,8 @@ export class FileExplorerComponent implements OnChanges, OnDestroy {
     if (!this.ownerId || this.loading()) return;
     this.loading.set(true);
     const raw = this.filterForm.getRawValue();
-    this.api.list({ ownerType: this.browseAll ? (raw.ownerType as FileOwnerType || undefined) : this.ownerType,
-      ownerId: this.browseAll ? undefined : this.ownerId, folderId: this.selectedFolderId(),
+    this.api.list({ ownerType: this.relatedProjectId ? undefined : this.browseAll ? (raw.ownerType as FileOwnerType || undefined) : this.ownerType,
+      ownerId: this.relatedProjectId ? undefined : this.browseAll ? undefined : this.ownerId, projectId: this.relatedProjectId, folderId: this.selectedFolderId(),
       search: raw.search, extension: raw.extension, author: raw.author, status: raw.status as FileStatus,
       page: this.page(), size: 20 }).subscribe({
       next: response => { this.files.set(append ? [...this.files(), ...response.data.content] : response.data.content); this.totalPages.set(response.data.totalPages); this.totalElements.set(response.data.totalElements); this.loading.set(false); },

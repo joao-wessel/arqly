@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import java.util.List;
+import java.time.Instant;
 
 public interface ProjectRepository extends JpaRepository<Project, UUID>, JpaSpecificationExecutor<Project> {
     boolean existsByProposalIdAndDeletedFalse(UUID proposalId);
@@ -33,4 +34,20 @@ public interface ProjectRepository extends JpaRepository<Project, UUID>, JpaSpec
             order by count(p) desc
             """)
     List<Object[]> countProjectsByResponsible(UUID tenantId);
+
+    @Query("""
+            select distinct p from Project p
+            join fetch p.client
+            left join fetch p.responsibleUser
+            left join fetch p.projectManager
+            left join ProjectPhase phase on phase.project = p and phase.deleted = false
+            left join ProjectStage stage on stage.projectPhase = phase and stage.deleted = false
+            where p.tenant.id = :tenantId and p.deleted = false
+              and (:admin = true or p.responsibleUser.id = :userId or p.projectManager.id = :userId or stage.responsibleUser.id = :userId)
+            order by p.updatedAt desc
+            """)
+    List<Project> findRelevantForHome(UUID tenantId, UUID userId, boolean admin, org.springframework.data.domain.Pageable pageable);
+
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"client", "responsibleUser", "projectManager"})
+    List<Project> findTop20ByTenantIdAndDeletedFalseAndUpdatedAtBeforeOrderByUpdatedAtAsc(UUID tenantId, Instant updatedAt);
 }

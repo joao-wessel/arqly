@@ -68,7 +68,7 @@ export class FileUploadComponent {
   @ViewChild('fileInput') fileInput?: ElementRef<HTMLInputElement>;
 
   private readonly http = inject(HttpClient);
-  private readonly baseUrl = 'http://localhost:8080/api/tenant/files';
+  private readonly baseUrl = '/api/tenant/files';
   readonly dragging = signal(false);
   readonly entries = signal<UploadEntry[]>([]);
   readonly conflict = signal<UploadEntry | null>(null);

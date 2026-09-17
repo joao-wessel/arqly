@@ -1,7 +1,11 @@
 import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';
 import { LucideAngularModule } from 'lucide-angular';
-import { FileItem } from './file.models';
+export interface FilePreviewFile {
+  name: string;
+  mimeType: string;
+  extension: string;
+}
 
 @Component({
   selector: 'app-file-preview',
@@ -27,7 +31,7 @@ import { FileItem } from './file.models';
 })
 export class FilePreviewComponent {
   private readonly sanitizer = inject(DomSanitizer);
-  @Input({ required: true }) file!: FileItem;
+  @Input({ required: true }) file!: FilePreviewFile;
   @Input({ required: true }) url = '';
   @Output() closed = new EventEmitter<void>();
   image() { return this.file.mimeType.startsWith('image/') && this.file.extension !== 'svg'; }

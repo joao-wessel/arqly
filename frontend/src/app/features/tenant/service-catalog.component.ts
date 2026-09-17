@@ -1,4 +1,4 @@
-﻿import { DatePipe, DecimalPipe } from '@angular/common';
+import { DatePipe, DecimalPipe } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -380,7 +380,7 @@ export class ServiceCatalogComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly http = inject(HttpClient);
   private readonly toast = inject(ToastService);
-  private readonly baseUrl = 'http://localhost:8080/api/tenant/service-catalog';
+  private readonly baseUrl = '/api/tenant/service-catalog';
 
   readonly mode = signal<ViewMode>('services');
   readonly stats = signal<Stats | null>(null);

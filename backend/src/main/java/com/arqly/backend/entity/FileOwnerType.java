@@ -5,6 +5,7 @@ public enum FileOwnerType {
     PROPOSAL,
     PROJECT,
     PROJECT_STAGE,
+    CONSTRUCTION_DIARY_ENTRY,
     DOCUMENT,
     TENANT
 }

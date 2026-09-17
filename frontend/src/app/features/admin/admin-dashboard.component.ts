@@ -82,7 +82,7 @@ export class AdminDashboardComponent implements OnInit {
   constructor(private readonly http: HttpClient) {}
 
   ngOnInit() {
-    this.http.get<ApiResponse<AdminDashboard>>('http://localhost:8080/api/platform/dashboard')
+    this.http.get<ApiResponse<AdminDashboard>>('/api/platform/dashboard')
       .subscribe((response) => this.dashboard.set(response.data));
   }
 

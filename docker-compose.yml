@@ -1,50 +1,68 @@
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: arqly-postgres
+    restart: unless-stopped
     environment:
-      POSTGRES_DB: arqly
-      POSTGRES_USER: arqly
-      POSTGRES_PASSWORD: arqly
+      POSTGRES_DB: ${POSTGRES_DB:?Defina POSTGRES_DB no arquivo .env}
+      POSTGRES_USER: ${POSTGRES_USER:?Defina POSTGRES_USER no arquivo .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD no arquivo .env}
     ports:
-      - "5432:5432"
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U arqly -d arqly"]
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 20s
 
   backend:
     build:
       context: ./backend
-    container_name: arqly-backend
+    restart: unless-stopped
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/arqly
-      SPRING_DATASOURCE_USERNAME: arqly
-      SPRING_DATASOURCE_PASSWORD: arqly
-      ARQLY_PLATFORM_EMAIL: admin@arqly.local
-      ARQLY_PLATFORM_PASSWORD: Admin@12345
-      ARQLY_PLATFORM_JWT_SECRET: change-me-platform-secret-change-me-platform-secret
-      ARQLY_TENANT_JWT_SECRET: change-me-tenant-secret-change-me-tenant-secret
-      ARQLY_STORAGE_LOCAL_ROOT: /app/storage
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:?Defina POSTGRES_DB no arquivo .env}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:?Defina POSTGRES_USER no arquivo .env}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD no arquivo .env}
+      ARQLY_PLATFORM_JWT_SECRET: ${ARQLY_PLATFORM_JWT_SECRET:?Defina ARQLY_PLATFORM_JWT_SECRET no arquivo .env}
+      ARQLY_TENANT_JWT_SECRET: ${ARQLY_TENANT_JWT_SECRET:?Defina ARQLY_TENANT_JWT_SECRET no arquivo .env}
+      ARQLY_JWT_ISSUER: ${ARQLY_JWT_ISSUER:-arqly}
+      APP_ALLOWED_ORIGINS: ${APP_ALLOWED_ORIGINS:?Defina APP_ALLOWED_ORIGINS no arquivo .env}
+      APP_PUBLIC_WEBSITE_URL: ${APP_PUBLIC_WEBSITE_URL:?Defina APP_PUBLIC_WEBSITE_URL no arquivo .env}
+      APP_PUBLIC_FRONTEND_URL: ${APP_PUBLIC_FRONTEND_URL:?Defina APP_PUBLIC_FRONTEND_URL no arquivo .env}
+      APP_PUBLIC_BACKEND_URL: ${APP_PUBLIC_BACKEND_URL:?Defina APP_PUBLIC_BACKEND_URL no arquivo .env}
+      APP_STORAGE_PATH: /app/storage
+      ARQLY_INITIAL_BOOTSTRAP_ENABLED: ${ARQLY_INITIAL_BOOTSTRAP_ENABLED:-false}
+      ARQLY_INITIAL_ADMIN_NAME: ${ARQLY_INITIAL_ADMIN_NAME:-}
+      ARQLY_INITIAL_ADMIN_EMAIL: ${ARQLY_INITIAL_ADMIN_EMAIL:-}
+      ARQLY_INITIAL_ADMIN_PASSWORD: ${ARQLY_INITIAL_ADMIN_PASSWORD:-}
+      SPRING_MAIL_HOST: ${SPRING_MAIL_HOST:-}
+      SPRING_MAIL_PORT: ${SPRING_MAIL_PORT:-1025}
     ports:
-      - "8080:8080"
+      - "127.0.0.1:${BACKEND_PORT:-8080}:8080"
     depends_on:
       postgres:
         condition: service_healthy
     volumes:
       - file_storage:/app/storage
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://localhost:8080/actuator/health | grep -q 'UP'"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 45s
 
   frontend:
     build:
       context: ./frontend
-    container_name: arqly-frontend
+    restart: unless-stopped
     ports:
-      - "4200:80"
+      - "${FRONTEND_PORT:-4200}:80"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
 
 volumes:
   postgres_data:

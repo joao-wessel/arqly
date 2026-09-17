@@ -56,6 +56,7 @@ public class FileController {
     public ApiResponse<Page<FileResponse>> list(@AuthenticationPrincipal AuthenticatedUser user,
                                                 @RequestParam(required = false) FileOwnerType ownerType,
                                                 @RequestParam(required = false) UUID ownerId,
+                                                @RequestParam(required = false) UUID projectId,
                                                 @RequestParam(required = false) UUID folderId,
                                                 @RequestParam(required = false) Boolean rootOnly,
                                                 @RequestParam(required = false) String search,
@@ -64,7 +65,7 @@ public class FileController {
                                                 @RequestParam(required = false) String tag,
                                                 @RequestParam(required = false) FileResourceStatus status,
                                                 Pageable pageable) {
-        return ApiResponse.ok(searchService.search(user.getTenantId(), ownerType, ownerId, folderId, rootOnly,
+        return ApiResponse.ok(searchService.search(user.getTenantId(), ownerType, ownerId, projectId, folderId, rootOnly,
                 search, extension, author, tag, status, pageable));
     }
 
@@ -111,11 +112,13 @@ public class FileController {
     public ResponseEntity<InputStreamResource> preview(@AuthenticationPrincipal AuthenticatedUser user, @PathVariable UUID id) {
         var file = service.get(user.getTenantId(), id);
         if (!file.previewAvailable()) return ResponseEntity.status(415).build();
-        return ResponseEntity.ok()
+        var response = ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(file.mimeType()))
                 .header(HttpHeaders.CONTENT_DISPOSITION,
                         ContentDisposition.inline().filename(file.name(), StandardCharsets.UTF_8).build().toString())
-                .body(new InputStreamResource(service.download(user.getTenantId(), user.getId(), user.getUsername(), id, null)));
+                .header("X-Content-Type-Options", "nosniff");
+        if ("svg".equalsIgnoreCase(file.extension())) response.header("Content-Security-Policy", "sandbox");
+        return response.body(new InputStreamResource(service.download(user.getTenantId(), user.getId(), user.getUsername(), id, null)));
     }
 
     @PutMapping("/{id}")

@@ -56,7 +56,7 @@ export class ContextDocumentsComponent implements OnChanges {
     if (this.projectId) params.set('projectId', this.projectId);
     if (this.proposalId) params.set('proposalId', this.proposalId);
     if (this.clientId) params.set('clientId', this.clientId);
-    this.http.get<ApiResponse<Page<DocumentItem>>>(`http://localhost:8080/api/tenant/documents/generated?${params}`)
+    this.http.get<ApiResponse<Page<DocumentItem>>>(`/api/tenant/documents/generated?${params}`)
       .subscribe({ next: response => this.documents.set(response.data.content) });
   }
 

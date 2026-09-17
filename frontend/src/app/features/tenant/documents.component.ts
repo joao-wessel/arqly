@@ -169,7 +169,7 @@ export class DocumentsComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly fb = inject(FormBuilder);
   private readonly toast = inject(ToastService);
-  private readonly baseUrl = 'http://localhost:8080/api/tenant/documents';
+  private readonly baseUrl = '/api/tenant/documents';
   readonly templateContentPlaceholder = '# Título do documento\n\nCliente: {{cliente.nome}}';
   @ViewChild('templateEditor') private templateEditor?: MarkdownEditorComponent;
 
@@ -234,12 +234,12 @@ export class DocumentsComponent implements OnInit {
   private loadSupportData() {
     this.http.get<ApiResponse<VariableItem[]>>(`${this.baseUrl}/variables`).subscribe(response => this.variables.set(response.data));
     this.http.get<ApiResponse<TemplateSummary[]>>(`${this.baseUrl}/templates/options`).subscribe(response => this.templateOptionsData.set(response.data));
-    this.http.get<ApiResponse<Page<OptionEntity>>>('http://localhost:8080/api/tenant/clients?page=0&size=200&sort=createdAt,desc').subscribe({
+    this.http.get<ApiResponse<Page<OptionEntity>>>('/api/tenant/clients?page=0&size=200&sort=createdAt,desc').subscribe({
       next: response => this.clients.set(response.data.content),
       error: () => this.toast.error('Não foi possível carregar os clientes.')
     });
-    this.http.get<ApiResponse<Page<OptionEntity>>>('http://localhost:8080/api/tenant/projects?page=0&size=200&sort=name,asc').subscribe(response => this.projects.set(response.data.content));
-    this.http.get<ApiResponse<Page<OptionEntity>>>('http://localhost:8080/api/tenant/proposals?page=0&size=200&sort=createdAt,desc').subscribe(response => this.proposals.set(response.data.content));
+    this.http.get<ApiResponse<Page<OptionEntity>>>('/api/tenant/projects?page=0&size=200&sort=name,asc').subscribe(response => this.projects.set(response.data.content));
+    this.http.get<ApiResponse<Page<OptionEntity>>>('/api/tenant/proposals?page=0&size=200&sort=createdAt,desc').subscribe(response => this.proposals.set(response.data.content));
   }
   readonly templateOptionsData = signal<TemplateSummary[]>([]);
 

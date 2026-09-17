@@ -180,7 +180,8 @@ select.field,
   }
 }
 
-.checkbox {
+.checkbox,
+.arqly-checkbox {
   appearance: none;
   width: 1.2rem;
   height: 1.2rem;
@@ -193,7 +194,8 @@ select.field,
   transition: border-color 150ms ease, background-color 150ms ease, box-shadow 150ms ease;
 }
 
-.checkbox:checked {
+.checkbox:checked,
+.arqly-checkbox:checked {
   border-color: var(--color-primary);
   background-color: var(--color-primary);
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 16 16' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M3.5 8.3 6.6 11.2 12.7 4.8' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
@@ -202,12 +204,14 @@ select.field,
   background-size: 0.85rem 0.85rem;
 }
 
-.checkbox:focus {
+.checkbox:focus,
+.arqly-checkbox:focus {
   outline: none;
   box-shadow: 0 0 0 0.45rem rgb(var(--arqly-100) / 0.82);
 }
 
-.checkbox:hover {
+.checkbox:hover,
+.arqly-checkbox:hover {
   border-color: rgb(var(--arqly-500));
   box-shadow: 0 0 0 0.45rem rgb(var(--arqly-100) / 0.78);
 }
@@ -276,7 +280,8 @@ select.field,
   color: #748481;
 }
 
-:root.dark .checkbox {
+:root.dark .checkbox,
+:root.dark .arqly-checkbox {
   background-color: rgb(var(--arqly-900) / 0.34);
   border-color: rgb(var(--arqly-500) / 0.72);
   box-shadow: none;
@@ -287,3 +292,19 @@ select.field,
 :root.dark .shadow-soft {
   box-shadow: 0 18px 60px var(--shadow-soft-color) !important;
 }
+
+/* FullCalendar is intentionally styled here so every calendar view inherits the active Arqly palette. */
+.fc { --fc-border-color: #e2e8f0; --fc-page-bg-color: transparent; --fc-neutral-bg-color: #f8fafc; --fc-today-bg-color: rgb(var(--arqly-50) / .72); font-family: inherit; }
+.fc .fc-scrollgrid { border-radius: .9rem; overflow: hidden; }
+.fc .fc-col-header-cell { padding: .65rem .25rem; font-size: .69rem; font-weight: 800; text-transform: uppercase; color: #64748b; }
+.fc .fc-daygrid-day-number { padding: .55rem; font-size: .82rem; font-weight: 700; color: #475569; }
+.fc .fc-day-today .fc-daygrid-day-number { color: rgb(var(--arqly-700)); }
+.fc .fc-event { border: 0; border-radius: .5rem; padding: .18rem .35rem; font-size: .72rem; font-weight: 700; box-shadow: none; }
+.fc .fc-list { border: 0; }
+.fc .fc-list-day-cushion { background: #f8fafc; color: #475569; font-size: .78rem; font-weight: 800; text-transform: uppercase; }
+.fc .fc-list-event:hover td { background: rgb(var(--arqly-50) / .65); }
+.fc .fc-timegrid-slot-label-cushion { color: #94a3b8; font-size: .7rem; }
+:root.dark .fc { --fc-border-color: var(--color-border); --fc-neutral-bg-color: #202020; --fc-today-bg-color: rgb(var(--arqly-500) / .12); }
+:root.dark .fc .fc-col-header-cell, :root.dark .fc .fc-daygrid-day-number, :root.dark .fc .fc-list-day-text { color: var(--color-muted); }
+:root.dark .fc .fc-list-day-cushion { background: #202020; }
+@media (max-width: 767px) { .fc .fc-toolbar-title { font-size: 1rem; } .fc .fc-list-event-title { font-size: .82rem; } }

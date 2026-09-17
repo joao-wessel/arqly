@@ -1,6 +1,7 @@
 package com.arqly.backend.service;
 
 import com.arqly.backend.activity.ActivityEventPublisher;
+import com.arqly.backend.notification.NotificationDomainPublisher;
 import com.arqly.backend.dto.StageWorkspaceDtos.ChecklistItemRequest;
 import com.arqly.backend.dto.StageWorkspaceDtos.ChecklistItemResponse;
 import com.arqly.backend.dto.StageWorkspaceDtos.ChecklistToggleRequest;
@@ -44,19 +45,21 @@ public class StageWorkspaceService {
     private final TenantUserRepository tenantUserRepository;
     private final ActivityEventPublisher activityPublisher;
     private final ActivityService activityService;
+    private final NotificationDomainPublisher notifications;
 
     public StageWorkspaceService(ProjectStageRepository stageRepository,
                                  ProjectPhaseRepository phaseRepository,
                                  ProjectStageChecklistItemRepository checklistRepository,
                                  TenantUserRepository tenantUserRepository,
                                  ActivityEventPublisher activityPublisher,
-                                 ActivityService activityService) {
+                                 ActivityService activityService, NotificationDomainPublisher notifications) {
         this.stageRepository = stageRepository;
         this.phaseRepository = phaseRepository;
         this.checklistRepository = checklistRepository;
         this.tenantUserRepository = tenantUserRepository;
         this.activityPublisher = activityPublisher;
         this.activityService = activityService;
+        this.notifications = notifications;
     }
 
     @Transactional(readOnly = true)
@@ -101,6 +104,7 @@ public class StageWorkspaceService {
         }
 
         registerChanges(stage, oldStatus, oldProgress, oldResponsibleId, userId, actor);
+        if (stage.getResponsibleUser() != null && !stage.getResponsibleUser().getId().equals(oldResponsibleId)) notifications.stageAssigned(stage);
         recalculatePhase(tenantId, stage.getProjectPhase().getId());
         return toResponse(tenantId, stage);
     }
@@ -226,6 +230,7 @@ public class StageWorkspaceService {
         var stage = findStage(tenantId, stageId);
         var activity = activityService.addComment(tenantId, stage.getProjectPhase().getProject().getId(),
                 stage.getProjectPhase().getId(), stage.getId(), userId, actor, request.comment());
+        notifications.mentions(stage, request.comment(), userId);
         return toComment(activity);
     }
 

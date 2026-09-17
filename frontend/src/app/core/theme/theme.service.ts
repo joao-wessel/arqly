@@ -8,7 +8,7 @@ export type ThemeMode = 'light' | 'dark';
 
 const THEME_STORAGE_KEY = 'arqly.theme';
 const PALETTE_STORAGE_KEY = 'arqly.palette';
-const API_URL = 'http://localhost:8080/api';
+const API_URL = '/api';
 
 interface AppearancePreferences {
   themeMode: ThemeMode;

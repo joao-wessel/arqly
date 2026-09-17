@@ -9,6 +9,7 @@ import com.arqly.backend.dto.PortalDtos.PortalDocumentResponse;
 import com.arqly.backend.dto.PortalDtos.PortalFileResponse;
 import com.arqly.backend.dto.PortalDtos.PortalProjectResponse;
 import com.arqly.backend.dto.PortalDtos.PortalProjectSummaryResponse;
+import com.arqly.backend.dto.PortalDtos.PortalDiaryResponse;
 import com.arqly.backend.dto.PortalDtos.PortalProposalSummaryResponse;
 import com.arqly.backend.dto.ProposalDtos.PortalProposalResponse;
 import com.arqly.backend.dto.ProposalDtos.ProposalDecisionRequest;
@@ -16,11 +17,15 @@ import com.arqly.backend.dto.ProposalDtos.ProposalResponse;
 import com.arqly.backend.service.ClientService;
 import com.arqly.backend.service.GeneratedDocumentPdfService;
 import com.arqly.backend.service.PortalWorkspaceService;
+import com.arqly.backend.service.PortalDiaryQueryService;
 import com.arqly.backend.service.ProposalService;
 import jakarta.servlet.http.HttpServletRequest;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
+import java.time.LocalDate;
+import com.arqly.backend.dto.CalendarDtos.CalendarItemResponse;
+import com.arqly.backend.service.calendar.PortalCalendarQueryService;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
@@ -40,13 +45,17 @@ public class PortalController {
     private final ProposalService proposalService;
     private final PortalWorkspaceService portalService;
     private final GeneratedDocumentPdfService pdfService;
+    private final PortalDiaryQueryService diaryService;
+    private final PortalCalendarQueryService calendarService;
 
     public PortalController(ClientService service, ProposalService proposalService, PortalWorkspaceService portalService,
-                            GeneratedDocumentPdfService pdfService) {
+                            GeneratedDocumentPdfService pdfService, PortalDiaryQueryService diaryService, PortalCalendarQueryService calendarService) {
         this.service = service;
         this.proposalService = proposalService;
         this.portalService = portalService;
         this.pdfService = pdfService;
+        this.diaryService = diaryService;
+        this.calendarService = calendarService;
     }
 
     @GetMapping("/{token}")
@@ -95,6 +104,16 @@ public class PortalController {
         return ApiResponse.ok(portalService.files(token));
     }
 
+    @GetMapping("/{token}/calendar")
+    public ApiResponse<List<CalendarItemResponse>> calendar(@PathVariable UUID token, @org.springframework.web.bind.annotation.RequestParam LocalDate start, @org.springframework.web.bind.annotation.RequestParam LocalDate end) {
+        return ApiResponse.ok(calendarService.list(token, start, end));
+    }
+
+    @GetMapping("/{token}/projects/{projectId}/construction-diary")
+    public ApiResponse<List<PortalDiaryResponse>> diary(@PathVariable UUID token, @PathVariable UUID projectId) {
+        return ApiResponse.ok(diaryService.project(token, projectId));
+    }
+
     @GetMapping("/{token}/files/{fileId}/download")
     public ResponseEntity<InputStreamResource> fileDownload(@PathVariable UUID token, @PathVariable UUID fileId) {
         var file = portalService.portalFile(token, fileId);
@@ -108,11 +127,13 @@ public class PortalController {
     @GetMapping("/{token}/files/{fileId}/preview")
     public ResponseEntity<InputStreamResource> filePreview(@PathVariable UUID token, @PathVariable UUID fileId) {
         var file = portalService.portalFile(token, fileId);
-        return ResponseEntity.ok()
+        var response = ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(file.getMimeType()))
                 .header(HttpHeaders.CONTENT_DISPOSITION,
                         ContentDisposition.inline().filename(file.getName(), StandardCharsets.UTF_8).build().toString())
-                .body(new InputStreamResource(portalService.fileStream(token, fileId)));
+                .header("X-Content-Type-Options", "nosniff");
+        if ("svg".equalsIgnoreCase(file.getExtension())) response.header("Content-Security-Policy", "sandbox");
+        return response.body(new InputStreamResource(portalService.fileStream(token, fileId)));
     }
 
     @GetMapping("/{token}/approvals")

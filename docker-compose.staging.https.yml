@@ -1,0 +1,12 @@
+services:
+  reverse-proxy:
+    ports:
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
+    volumes:
+      - ./infra/nginx/https.conf.template:/etc/nginx/templates/default.conf.template:ro
+      - certbot_conf:/etc/letsencrypt:ro
+      - certbot_www:/var/www/certbot:ro
+    command: >-
+      /bin/sh -c 'while :; do sleep 12h; nginx -s reload || true; done &
+      exec nginx -g "daemon off;"'

@@ -7,10 +7,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-public interface ProjectStageRepository extends JpaRepository<ProjectStage, UUID> {
+public interface ProjectStageRepository extends JpaRepository<ProjectStage, UUID>, JpaSpecificationExecutor<ProjectStage> {
     List<ProjectStage> findAllByProjectPhaseIdAndTenantIdAndDeletedFalseOrderByOrderAsc(UUID projectPhaseId, UUID tenantId);
     @Query("""
             select stage
@@ -38,5 +39,25 @@ public interface ProjectStageRepository extends JpaRepository<ProjectStage, UUID
             order by count(stage) desc
             """)
     List<Object[]> countStagesByResponsible(@Param("tenantId") UUID tenantId);
+
+    @Query("select s from ProjectStage s where s.tenant.id=:tenantId and s.deleted=false and s.plannedEnd is not null and s.plannedEnd between :start and :end")
+    List<ProjectStage> findDueForCalendar(@Param("tenantId") UUID tenantId, @Param("start") LocalDate start, @Param("end") LocalDate end);
+
+    @Query("""
+            select stage from ProjectStage stage
+            join fetch stage.projectPhase phase
+            join fetch phase.project project
+            left join fetch stage.responsibleUser
+            where stage.tenant.id = :tenantId and stage.deleted = false
+              and stage.plannedEnd is not null and stage.plannedEnd < :today
+              and stage.status not in :closedStatuses
+            order by stage.plannedEnd asc
+            """)
+    List<ProjectStage> findOverdueForHome(@Param("tenantId") UUID tenantId,
+                                          @Param("today") LocalDate today,
+                                          @Param("closedStatuses") List<ProjectStageStatus> closedStatuses);
+
+    @Query("select s from ProjectStage s join s.projectPhase p where s.tenant.id = :tenantId and s.deleted = false and p.project.id in :projectIds")
+    List<ProjectStage> findAllForHomeByProjectIds(@Param("tenantId") UUID tenantId, @Param("projectIds") java.util.Set<UUID> projectIds);
 
 }

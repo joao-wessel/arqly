@@ -203,9 +203,9 @@ export class SettingsComponent implements OnInit {
   });
 
   ngOnInit() {
-    this.http.get<ApiResponse<Record<string, unknown>>>('http://localhost:8080/api/platform/settings/general')
+    this.http.get<ApiResponse<Record<string, unknown>>>('/api/platform/settings/general')
       .subscribe((response) => this.settingsForm.controls.general.patchValue(response.data));
-    this.http.get<ApiResponse<Record<string, unknown>>>('http://localhost:8080/api/platform/settings/smtp')
+    this.http.get<ApiResponse<Record<string, unknown>>>('/api/platform/settings/smtp')
       .subscribe((response) => this.settingsForm.controls.smtp.patchValue(response.data));
   }
 
@@ -216,8 +216,8 @@ export class SettingsComponent implements OnInit {
       return;
     }
     const value = this.settingsForm.getRawValue();
-    this.http.put('http://localhost:8080/api/platform/settings/general', value.general).subscribe(() => {
-      this.http.put('http://localhost:8080/api/platform/settings/smtp', value.smtp)
+    this.http.put('/api/platform/settings/general', value.general).subscribe(() => {
+      this.http.put('/api/platform/settings/smtp', value.smtp)
         .subscribe({
           next: () => {
             this.message.set('Configurações salvas.');
@@ -235,7 +235,7 @@ export class SettingsComponent implements OnInit {
       return;
     }
     const to = this.settingsForm.controls.smtp.getRawValue().senderEmail;
-    this.http.post('http://localhost:8080/api/platform/settings/smtp/test', { to })
+    this.http.post('/api/platform/settings/smtp/test', { to })
       .subscribe({
         next: () => {
           this.message.set('E-mail de teste enviado.');

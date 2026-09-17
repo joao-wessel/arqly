@@ -12,5 +12,6 @@ public interface ProjectTemplateRepository extends JpaRepository<ProjectTemplate
     Page<ProjectTemplate> findAllByTenantIdAndDeletedFalse(UUID tenantId, Pageable pageable);
     List<ProjectTemplate> findAllByTenantIdAndActiveTrueAndDeletedFalseOrderByNameAsc(UUID tenantId);
     Optional<ProjectTemplate> findByIdAndTenantIdAndDeletedFalse(UUID id, UUID tenantId);
+    Optional<ProjectTemplate> findByTenantIdAndNameIgnoreCaseAndDeletedFalse(UUID tenantId, String name);
     boolean existsByTenantIdAndNameIgnoreCaseAndDeletedFalse(UUID tenantId, String name);
 }

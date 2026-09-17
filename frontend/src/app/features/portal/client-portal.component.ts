@@ -7,6 +7,7 @@ import { LucideAngularModule } from 'lucide-angular';
 import { ApiResponse } from '../../core/auth/auth.models';
 import { LogoComponent } from '../../shared/components/logo.component';
 import { ToastService } from '../../shared/components/toast/toast.service';
+import { FilePreviewComponent } from '../../shared/files/file-preview.component';
 
 type PortalView = 'dashboard' | 'projects' | 'documents' | 'files' | 'approvals';
 type ProjectStatus = 'PLANNING' | 'IN_PROGRESS' | 'ON_HOLD' | 'COMPLETED' | 'CANCELLED';
@@ -24,11 +25,12 @@ interface PortalFile { id: string; name: string; extension: string; mimeType: st
 interface PortalApproval { id: string; projectId: string; projectName: string; stageName?: string; documentId?: string; documentTitle?: string; status: ApprovalStatus; description: string; deadline?: string; approvedAt?: string; clientComment?: string; createdAt: string; }
 interface PortalProposal { id: string; number: string; title: string; status: string; total: number; validUntil: string | null; portalUrl: string; createdAt: string; }
 interface PortalProjectDetail extends PortalProjectSummary { description: string; clientName: string; proposalNumber?: string; startDate?: string; expectedEndDate?: string; phases: PortalPhase[]; documents: PortalDocument[]; files: PortalFile[]; approvals: PortalApproval[]; activities: PortalActivity[]; }
+interface PortalDiary { id: string; title: string; entryType: string; entryDate: string; responsibleName: string; summary?: string; location?: string; stages: string[]; occurrences: { title: string; severity: string; resolved: boolean }[]; decisions: { description: string }[]; photos: { fileId: string; fileName: string; mimeType: string; caption?: string; description?: string }[]; }
 
 @Component({
   selector: 'app-client-portal',
   standalone: true,
-  imports: [DatePipe, FormsModule, LucideAngularModule, LogoComponent],
+  imports: [DatePipe, FormsModule, LucideAngularModule, LogoComponent, FilePreviewComponent],
   template: `
     <main class="min-h-screen bg-[var(--surface-muted)] text-slate-900">
       @if (dashboard(); as data) {
@@ -140,13 +142,13 @@ interface PortalProjectDetail extends PortalProjectSummary { description: string
                         </div>
                       </div>
                       <div class="grid gap-5 p-6 xl:grid-cols-[1fr_22rem]">
-                        <div class="space-y-5">
+                        <div class="flex flex-col gap-5">
                           <div class="grid gap-4 md:grid-cols-3">
                             <div class="rounded-2xl border border-slate-200 p-4"><p class="text-xs font-bold text-slate-500">Responsável</p><strong class="mt-2 block">{{ project.responsibleName || 'Equipe' }}</strong></div>
                             <div class="rounded-2xl border border-slate-200 p-4"><p class="text-xs font-bold text-slate-500">Proposta</p><strong class="mt-2 block">{{ project.proposalNumber || 'Sem proposta vinculada' }}</strong></div>
                             <div class="rounded-2xl border border-slate-200 p-4"><p class="text-xs font-bold text-slate-500">Previsão</p><strong class="mt-2 block">{{ project.expectedEndDate ? (project.expectedEndDate | date:'dd/MM/yyyy') : '-' }}</strong></div>
                           </div>
-                          <section>
+                          <section class="order-2">
                             <h3 class="text-lg font-extrabold">Etapas</h3>
                             <div class="mt-4 space-y-4">
                               @for (phase of project.phases; track phase.id) {
@@ -175,6 +177,10 @@ interface PortalProjectDetail extends PortalProjectSummary { description: string
                                 </div>
                               }
                             </div>
+                          </section>
+                          <section class="order-1 rounded-2xl border border-slate-200 p-5">
+                            <div class="flex items-center gap-3"><span class="rounded-xl bg-arqly-50 p-2 text-arqly-700"><lucide-icon name="ClipboardList" size="18"></lucide-icon></span><div><h3 class="font-extrabold">Diário de Obra</h3><p class="text-sm text-slate-500">Atualizações publicadas pelo escritório.</p></div></div>
+                            <div class="mt-4 space-y-3">@for (entry of projectDiary(); track entry.id) {<article class="rounded-xl bg-slate-50 p-4"><div class="flex flex-wrap items-center justify-between gap-2"><strong>{{ entry.title }}</strong><span class="text-xs font-bold text-slate-500">{{ entry.entryDate | date:'dd/MM/yyyy' }}</span></div><p class="mt-2 text-sm text-slate-600">{{ entry.summary }}</p><p class="mt-2 text-xs font-bold text-slate-400">{{ entry.responsibleName }} @if(entry.stages.length){ · {{ entry.stages.join(', ') }} }</p>@if(entry.photos.length){<div class="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">@for(photo of entry.photos; track photo.fileId){<article class="overflow-hidden rounded-xl border border-slate-200 bg-white"><button class="group block w-full text-left" type="button" (click)="openPhotoPreview(photo)"><div class="h-28 overflow-hidden bg-arqly-50">@if(isImage(photo.mimeType)){<img class="h-full w-full object-cover transition duration-200 group-hover:scale-105" [src]="filePreviewUrl(photo.fileId)" [alt]="photo.caption || photo.fileName"/>} @else {<div class="grid h-full place-items-center text-arqly-700"><lucide-icon name="Image" size="20"></lucide-icon></div>}</div><p class="truncate px-2 py-2 text-xs font-bold text-slate-600" [title]="photo.caption || photo.fileName">{{ photo.caption || photo.fileName }}</p></button><a class="flex items-center justify-center gap-1 border-t border-slate-100 px-2 py-2 text-xs font-bold text-arqly-700" [href]="fileDownloadUrl(photo.fileId)"><lucide-icon name="Download" size="13"></lucide-icon>Baixar</a></article>}</div>}</article>} @empty {<p class="py-3 text-sm text-slate-500">Nenhum registro do Diário foi compartilhado ainda.</p>}</div>
                           </section>
                         </div>
                         <aside class="space-y-4">
@@ -241,7 +247,7 @@ interface PortalProjectDetail extends PortalProjectSummary { description: string
                     @for (file of files(); track file.id) {
                       <article class="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
                         <div class="flex items-start gap-3">
-                          <span class="rounded-xl bg-white p-3 text-arqly-700"><lucide-icon name="FileText" size="20"></lucide-icon></span>
+                          <span class="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-xl bg-white text-arqly-700">@if(isImage(file.mimeType)){<img class="h-full w-full object-cover" [src]="filePreviewUrl(file.id)" [alt]="file.name"/>} @else {<lucide-icon name="FileText" size="20"></lucide-icon>}</span>
                           <div class="min-w-0 flex-1">
                             <p class="truncate font-extrabold">{{ file.name }}</p>
                             <p class="mt-1 text-xs font-bold uppercase text-slate-400">{{ file.extension || 'arquivo' }} · v{{ file.version }}</p>
@@ -249,7 +255,7 @@ interface PortalProjectDetail extends PortalProjectSummary { description: string
                         </div>
                         <div class="mt-4 flex gap-2">
                           @if (file.previewAvailable) {
-                            <a class="btn-secondary flex-1 justify-center px-3 py-2" target="_blank" [href]="filePreviewUrl(file.id)"><lucide-icon name="Eye" size="17"></lucide-icon>Ver</a>
+                            <button class="btn-secondary flex-1 justify-center px-3 py-2" type="button" (click)="openFilePreview(file)"><lucide-icon name="Eye" size="17"></lucide-icon>Ver</button>
                           }
                           <a class="btn-primary flex-1 justify-center px-3 py-2" [href]="fileDownloadUrl(file.id)"><lucide-icon name="Download" size="17"></lucide-icon>Baixar</a>
                         </div>
@@ -322,6 +328,7 @@ interface PortalProjectDetail extends PortalProjectSummary { description: string
           </div>
         </section>
       }
+      @if (previewFile() && previewUrl()) {<app-file-preview [file]="previewFile()!" [url]="previewUrl()!" (closed)="closeFilePreview()" />}
     </main>
   `
 })
@@ -339,6 +346,9 @@ export class ClientPortalComponent implements OnInit {
   readonly documents = signal<PortalDocument[]>([]);
   readonly files = signal<PortalFile[]>([]);
   readonly approvals = signal<PortalApproval[]>([]);
+  readonly projectDiary = signal<PortalDiary[]>([]);
+  readonly previewFile = signal<PortalFile | null>(null);
+  readonly previewUrl = signal<string | null>(null);
   approvalComment = '';
 
   readonly menu: { label: string; value: PortalView; icon: string }[] = [
@@ -378,6 +388,7 @@ export class ClientPortalComponent implements OnInit {
     this.view.set('projects');
     this.http.get<ApiResponse<PortalProjectDetail>>(`${this.baseUrl()}/projects/${id}`)
       .subscribe((response) => this.selectedProject.set(response.data));
+    this.http.get<ApiResponse<PortalDiary[]>>(`${this.baseUrl()}/projects/${id}/construction-diary`).subscribe((response) => this.projectDiary.set(response.data || []));
   }
 
   decideApproval(id: string, approved: boolean) {
@@ -397,9 +408,14 @@ export class ClientPortalComponent implements OnInit {
       });
   }
 
-  baseUrl() { return `http://localhost:8080/api/portal/${this.token()}`; }
+  baseUrl() { return `/api/portal/${this.token()}`; }
   fileDownloadUrl(id: string) { return `${this.baseUrl()}/files/${id}/download`; }
   filePreviewUrl(id: string) { return `${this.baseUrl()}/files/${id}/preview`; }
+  openFilePreview(file: PortalFile) { this.openPreview(file); }
+  openPhotoPreview(photo: PortalDiary['photos'][number]) { const extension = photo.fileName.split('.').pop()?.toLowerCase() || ''; this.openPreview({ id: photo.fileId, name: photo.fileName, extension, mimeType: photo.mimeType, size: 0, version: 1, previewAvailable: true, updatedAt: '' }); }
+  private openPreview(file: PortalFile) { this.http.get(this.filePreviewUrl(file.id), { responseType: 'blob' }).subscribe({ next: blob => { this.closeFilePreview(); this.previewFile.set(file); this.previewUrl.set(URL.createObjectURL(blob)); }, error: () => this.toast.error('Não foi possível visualizar o arquivo.') }); }
+  closeFilePreview() { if (this.previewUrl()) URL.revokeObjectURL(this.previewUrl()!); this.previewUrl.set(null); this.previewFile.set(null); }
+  isImage(mimeType: string) { return mimeType.startsWith('image/'); }
   documentPdfUrl(id: string) { return `${this.baseUrl()}/documents/${id}/pdf`; }
   proposalDecisionUrl(id: string) { return `/portal/${this.token()}/proposals/${id}`; }
   currency(value: number) { return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value || 0); }

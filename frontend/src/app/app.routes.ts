@@ -8,7 +8,7 @@ import { AdminDashboardComponent } from './features/admin/admin-dashboard.compon
 import { TenantsComponent } from './features/admin/tenants.component';
 import { PlatformUsersComponent } from './features/admin/platform-users.component';
 import { SettingsComponent } from './features/settings/settings.component';
-import { TenantDashboardComponent } from './features/tenant/tenant-dashboard.component';
+import { HomePageComponent } from './features/tenant/home.component';
 import { TenantUsersComponent } from './features/tenant/tenant-users.component';
 import { ChangePasswordComponent } from './features/account/change-password.component';
 import { ClientsComponent } from './features/tenant/clients.component';
@@ -21,6 +21,11 @@ import { ProjectDetailComponent, ProjectsComponent } from './features/tenant/pro
 import { StageWorkspaceComponent } from './features/tenant/stage-workspace.component';
 import { DocumentsComponent } from './features/tenant/documents.component';
 import { FilesComponent } from './features/tenant/files.component';
+import { ConstructionDiaryComponent } from './features/tenant/construction-diary.component';
+import { CalendarPageComponent } from './features/tenant/calendar.component';
+import { NotificationsComponent } from './features/tenant/notifications.component';
+import { FinancialComponent } from './features/tenant/financial.component';
+import { SearchResultsPageComponent } from './features/tenant/search-results.component';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent, data: { scope: 'tenant' } },
@@ -52,7 +57,7 @@ export const routes: Routes = [
     canActivate: [authGuard('tenant')],
     data: { scope: 'tenant' },
     children: [
-      { path: 'dashboard', component: TenantDashboardComponent },
+      { path: 'dashboard', component: HomePageComponent },
       { path: 'clients', component: ClientsComponent },
       { path: 'briefings', component: BriefingsComponent },
       { path: 'services', component: ServiceCatalogComponent },
@@ -60,6 +65,14 @@ export const routes: Routes = [
       { path: 'projects', component: ProjectsComponent },
       { path: 'projects/:projectId/stages/:stageId', component: StageWorkspaceComponent },
       { path: 'projects/:id', component: ProjectDetailComponent },
+      { path: 'construction-diary/new', component: ConstructionDiaryComponent },
+      { path: 'construction-diary/:id', component: ConstructionDiaryComponent },
+      { path: 'construction-diary', component: ConstructionDiaryComponent },
+      { path: 'calendar', component: CalendarPageComponent },
+      { path: 'notifications', component: NotificationsComponent },
+      { path: 'notificacoes', pathMatch: 'full', redirectTo: 'notifications' },
+      { path: 'financial', component: FinancialComponent },
+      { path: 'search', component: SearchResultsPageComponent },
       { path: 'documents', pathMatch: 'full', redirectTo: 'documents/generated' },
       { path: 'documents/templates', component: DocumentsComponent, data: { documentView: 'templates' } },
       { path: 'documents/generated', component: DocumentsComponent, data: { documentView: 'generated' } },
